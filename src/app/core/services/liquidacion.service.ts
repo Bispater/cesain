@@ -69,19 +69,12 @@ export class LiquidacionService {
     this.cargar();
   }
 
-  /** Carga desde la DB; si está vacía, siembra con la normalización del Excel. */
+  /** Carga las liquidaciones desde la DB (sin sembrar datos de ejemplo). */
   private async cargar() {
     try {
-      const desdeDb = await this.repo.listar();
-      if (desdeDb.length) {
-        this._liquidaciones.set(desdeDb);
-      } else {
-        this._liquidaciones.set(this._inicial.liquidaciones);
-        await this.repo.guardarTodo(this._inicial.liquidaciones);
-      }
+      this._liquidaciones.set(await this.repo.listar());
     } catch {
-      // Sin conexión: usa la normalización local para no quedar en blanco.
-      this._liquidaciones.set(this._inicial.liquidaciones);
+      this._liquidaciones.set([]);
     } finally {
       this.cargando.set(false);
     }
@@ -196,47 +189,6 @@ export class LiquidacionService {
   // ───────────────────────── Acciones ─────────────────────────
   setFiltroProfesional(v: string) { this.filtroProfesional.set(v); }
   setFiltroPeriodo(v: string) { this.filtroPeriodo.set(v); }
-
-  async procesarArchivo(nombreArchivo: string): Promise<void> {
-    this.logCarga.set([]);
-    const pasos: PasoCarga[] = [
-      { estado: 'subiendo', mensaje: `Subiendo "${nombreArchivo}"...` },
-      { estado: 'validando', mensaje: 'Validando pestañas y detectando celdas "NaN"...' },
-      { estado: 'normalizando', mensaje: 'Parseando fechas reales y unificando estructura...' },
-    ];
-    for (const paso of pasos) {
-      this.estadoCarga.set(paso.estado);
-      this.logCarga.update((l) => [...l, paso]);
-      await delay(900);
-    }
-
-    // "Ingresa" la pestaña nueva: se normaliza, se antepone y se persiste.
-    const { liquidaciones: nuevas, validacion } = this.normalizar([NUEVO_TAB_SIMULADO]);
-    const nueva = nuevas[0];
-    this._liquidaciones.update((arr) => [nueva, ...arr.filter((l) => l.id !== nueva.id)]);
-    void this.repo.guardar(nueva);
-    this._validacion.update((v) => ({
-      totalCeldas: v.totalCeldas + validacion.totalCeldas,
-      celdasDescartadas: v.celdasDescartadas + validacion.celdasDescartadas,
-      filasDescartadas: v.filasDescartadas + validacion.filasDescartadas,
-      filasOk: v.filasOk + validacion.filasOk,
-      incidencias: [...validacion.incidencias, ...v.incidencias],
-    }));
-
-    this.estadoCarga.set('completado');
-    this.logCarga.update((l) => [
-      ...l,
-      {
-        estado: 'completado',
-        mensaje: `✓ ${nueva.profesional} importado · ${nueva.items.length} prestaciones · período real ${nueva.periodo}`,
-      },
-    ]);
-  }
-
-  reiniciarCarga() {
-    this.estadoCarga.set('idle');
-    this.logCarga.set([]);
-  }
 
   /**
    * Crea una liquidación vacía para un profesional y un período (mes).
@@ -543,22 +495,3 @@ function slug(s: string): string {
     .replace(/^_+|_+$/g, '');
 }
 
-function delay(ms: number): Promise<void> {
-  return new Promise((res) => setTimeout(res, ms));
-}
-
-const NUEVO_TAB_SIMULADO: RawExcelTab = {
-  pestana: 'DR. FRETZ MEOLA',
-  profesionalRaw: 'DR. FRETZ MEOLA RODRIGUEZ',
-  especialidad: 'Traumatología',
-  tipo: 'MEDICO',
-  sede: 'Quintero',
-  porcentaje: '25%',
-  archivoNombre: 'LIQUIDACION JUNIO 2026.xlsx',
-  periodoReal: '2026-05',
-  filas: [
-    { prestacion: 'Consulta Particular', prevision: 'PARTICULAR', valor: 35000, copago: 35000, dias: { '08-may': 10, '15-may': 7, '22-may': 6 } },
-    { prestacion: 'Infiltración', prevision: 'PARTICULAR', valor: 60000, copago: 60000, dias: { '15-may': 2, '22-may': 1 } },
-    { prestacion: 'Plasma Rico en Plaquetas', prevision: 'PARTICULAR', valor: 120000, copago: 120000, dias: { '22-may': 1 } },
-  ],
-};
