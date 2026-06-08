@@ -123,8 +123,8 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
 
       <!-- ===== PLANILLA SEMANAL ===== -->
       <div class="overflow-x-auto pb-1">
-       <div class="w-full rounded-2xl bg-white shadow-sm border border-gray-200 overflow-hidden">
-        <table class="w-full text-sm border-collapse [&_td]:border [&_td]:border-gray-200 [&_th]:border [&_th]:border-brand-500">
+       <div class="min-w-full inline-block align-top rounded-2xl bg-white shadow-sm border border-gray-200 overflow-hidden">
+        <table class="w-full min-w-[1120px] text-sm border-collapse [&_td]:border [&_td]:border-gray-200 [&_th]:border [&_th]:border-brand-500">
           <thead>
             <tr class="bg-brand-600 text-white text-[11px] font-semibold uppercase tracking-wide">
               <th class="px-3 py-2.5 text-left sticky left-0 bg-brand-600 z-10 min-w-[14rem]">Prestación</th>
