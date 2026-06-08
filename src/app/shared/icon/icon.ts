@@ -6,7 +6,10 @@ export type IconName =
   | 'profesionales'
   | 'prestaciones'
   | 'importar'
-  | 'logout';
+  | 'logout'
+  | 'back'
+  | 'menu'
+  | 'close';
 
 /** Íconos SVG (estilo Lucide, stroke). Uso: <app-icon name="dashboard" /> */
 @Component({
@@ -47,6 +50,16 @@ export type IconName =
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
           <path d="M16 17l5-5-5-5" />
           <path d="M21 12H9" />
+        }
+        @case ('back') {
+          <path d="M19 12H5" />
+          <path d="M12 19l-7-7 7-7" />
+        }
+        @case ('menu') {
+          <path d="M4 6h16" /><path d="M4 12h16" /><path d="M4 18h16" />
+        }
+        @case ('close') {
+          <path d="M18 6 6 18" /><path d="M6 6l12 12" />
         }
       }
     </svg>

@@ -7,6 +7,7 @@ import { ItemLiquidacion, Liquidacion, Prevision, nombrePeriodo } from '../../co
 import { CATEGORIAS, Prestacion } from '../../core/models/prestacion.model';
 import { ClpPipe } from '../../shared/pipes/clp.pipe';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
+import { Icon } from '../../shared/icon/icon';
 
 interface FilaPlanilla {
   servicio: string;
@@ -28,13 +29,19 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
 
 @Component({
   selector: 'app-planilla',
-  imports: [ClpPipe, RouterLink, SlicePipe],
+  imports: [ClpPipe, RouterLink, SlicePipe, Icon],
   template: `
     @if (base(); as l) {
       <!-- Encabezado: título -->
       <header class="mb-4">
         <a routerLink="/liquidaciones"
-           class="inline-flex items-center gap-1 text-xs text-brand-600 hover:underline mb-1">← Liquidaciones</a>
+           class="group inline-flex items-center gap-1.5 mb-2 rounded-lg border border-gray-200 bg-white
+                  px-2.5 py-1.5 text-xs font-medium text-gray-600 shadow-sm
+                  hover:text-brand-700 hover:border-brand-200 transition-colors">
+          <app-icon name="back" [size]="15"
+                    class="transition-transform group-hover:-translate-x-0.5" />
+          Volver a Liquidaciones
+        </a>
         <h1 class="text-2xl font-bold text-gray-800 leading-tight">{{ l.profesional }}</h1>
         <div class="flex items-center gap-2 mt-1 text-sm text-gray-500">
           <span>{{ l.especialidad }}</span>

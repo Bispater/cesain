@@ -51,8 +51,8 @@ function vacio(): Profesional {
     }
 
     <!-- Tabla -->
-    <div class="rounded-2xl bg-white shadow-sm border border-gray-100 overflow-hidden">
-      <table class="w-full text-sm">
+    <div class="rounded-2xl bg-white shadow-sm border border-gray-100 overflow-x-auto">
+      <table class="w-full min-w-[820px] text-sm">
         <thead class="bg-brand-600 text-white text-left">
           <tr>
             <th class="px-4 py-3 font-semibold">Profesional</th>

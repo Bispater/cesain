@@ -51,8 +51,8 @@ import { ClpPipe } from '../../shared/pipes/clp.pipe';
     </div>
 
     <!-- Tabla -->
-    <div class="rounded-2xl bg-white shadow-sm border border-gray-100 overflow-hidden">
-      <table class="w-full text-sm">
+    <div class="rounded-2xl bg-white shadow-sm border border-gray-100 overflow-x-auto">
+      <table class="w-full min-w-[760px] text-sm">
         <thead class="bg-brand-50 text-brand-800 text-left">
           <tr>
             <th class="px-4 py-3 font-semibold">Profesional</th>
