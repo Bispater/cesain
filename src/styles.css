@@ -29,6 +29,17 @@ body {
   color: #1f1530;
 }
 
+/* Tailwind v4 ya no pone cursor:pointer en botones por defecto: lo restauramos. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+select:not(:disabled),
+label:has(> input[type="checkbox"]) {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
