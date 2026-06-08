@@ -6,10 +6,11 @@ import { Liquidacion, nombrePeriodo } from '../../core/models/liquidacion.model'
 import { ClpPipe } from '../../shared/pipes/clp.pipe';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { ToastService } from '../../shared/toast/toast.service';
+import { Icon } from '../../shared/icon/icon';
 
 @Component({
   selector: 'app-liquidaciones',
-  imports: [ClpPipe, RouterLink],
+  imports: [ClpPipe, RouterLink, Icon],
   template: `
     <header class="flex flex-wrap items-center justify-between gap-3 mb-6">
       <div>
@@ -20,8 +21,9 @@ import { ToastService } from '../../shared/toast/toast.service';
       </div>
       <div class="flex items-center gap-2">
         <button (click)="mostrarPapelera.set(true)"
-                class="rounded-lg border border-gray-200 bg-white text-gray-600 text-sm font-medium px-3 py-2 hover:bg-gray-50">
-          🗑 Papelera @if (svc.eliminadas().length) { ({{ svc.eliminadas().length }}) }
+                class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 text-sm font-medium px-3 py-2 hover:bg-gray-50">
+          <app-icon name="trash" [size]="16" />
+          Papelera @if (svc.eliminadas().length) { ({{ svc.eliminadas().length }}) }
         </button>
         <button (click)="abrirNueva()"
                 class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-4 py-2 shadow-md">
