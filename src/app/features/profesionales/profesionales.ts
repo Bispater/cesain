@@ -1,8 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ProfesionalService } from '../../core/services/profesional.service';
-import { Profesional, SEDES, TIPOS_PROFESIONAL, labelTipo } from '../../core/models/profesional.model';
-import { TipoProfesional } from '../../core/models/liquidacion.model';
+import { CatalogosService } from '../../core/services/catalogos.service';
+import { Profesional } from '../../core/models/profesional.model';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { ToastService } from '../../shared/toast/toast.service';
 
@@ -37,7 +37,7 @@ function vacio(): Profesional {
       <select [value]="svc.filtroTipo()" (change)="svc.filtroTipo.set($any($event.target).value)"
               class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-200">
         <option value="TODOS">Todos los tipos</option>
-        @for (t of tipos; track t.valor) { <option [value]="t.valor">{{ t.label }}</option> }
+        @for (t of cat.tipos(); track t.id) { <option [value]="t.id">{{ t.nombre }}</option> }
       </select>
       <select [value]="svc.filtroSede()" (change)="svc.filtroSede.set($any($event.target).value)"
               class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-200">
@@ -73,7 +73,7 @@ function vacio(): Profesional {
                 @if (p.rut) { <p class="text-xs text-gray-400">{{ p.rut }}</p> }
               </td>
               <td class="px-4 py-3">
-                <span class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-brand-100 text-brand-700">{{ labelTipo(p.tipoProfesional) }}</span>
+                <span class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-brand-100 text-brand-700">{{ cat.labelTipo(p.tipoProfesional) }}</span>
               </td>
               <td class="px-4 py-3 text-gray-600">{{ p.especialidad }}</td>
               <td class="px-4 py-3 text-gray-600">{{ p.sede }}</td>
@@ -117,7 +117,7 @@ function vacio(): Profesional {
             <label class="text-sm">
               <span class="text-gray-600">Tipo</span>
               <select [(ngModel)]="d.tipoProfesional" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:ring-2 focus:ring-brand-200">
-                @for (t of tipos; track t.valor) { <option [value]="t.valor">{{ t.label }}</option> }
+                @for (t of cat.tipos(); track t.id) { <option [value]="t.id">{{ t.nombre }}</option> }
               </select>
             </label>
             <label class="text-sm">
@@ -127,7 +127,7 @@ function vacio(): Profesional {
             <label class="text-sm">
               <span class="text-gray-600">Sede</span>
               <select [(ngModel)]="d.sede" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:ring-2 focus:ring-brand-200">
-                @for (s of sedes; track s) { <option [value]="s">{{ s }}</option> }
+                @for (s of cat.sedes(); track s.id) { <option [value]="s.nombre">{{ s.nombre }}</option> }
               </select>
             </label>
             <label class="text-sm">
@@ -169,11 +169,9 @@ function vacio(): Profesional {
 })
 export class Profesionales {
   readonly svc = inject(ProfesionalService);
+  readonly cat = inject(CatalogosService);
   private confirm = inject(ConfirmService);
   private toast = inject(ToastService);
-  readonly tipos = TIPOS_PROFESIONAL;
-  readonly sedes = SEDES;
-  readonly labelTipo = labelTipo;
 
   readonly draft = signal<Profesional | null>(null);
   readonly editandoId = signal<string | null>(null);

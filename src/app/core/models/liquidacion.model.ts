@@ -11,8 +11,8 @@
 /** Sistema previsional con el que se cobra una prestación. */
 export type Prevision = 'FONASA' | 'ISAPRE' | 'PARTICULAR';
 
-/** Tipo de profesional, define la lógica de negocio del cálculo. */
-export type TipoProfesional = 'MEDICO' | 'KINESIOLOGO' | 'TECNOLOGO_MEDICO';
+/** Tipo de profesional (ids del catálogo; admite tipos personalizados). */
+export type TipoProfesional = 'MEDICO' | 'KINESIOLOGO' | 'TECNOLOGO_MEDICO' | (string & {});
 
 /**
  * Una línea atómica de prestación ya normalizada.

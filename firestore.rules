@@ -15,5 +15,11 @@ service cloud.firestore {
     match /historial/{id} {
       allow read, write: if true;
     }
+    match /tipos/{id} {
+      allow read, write: if true;
+    }
+    match /sedes/{id} {
+      allow read, write: if true;
+    }
   }
 }

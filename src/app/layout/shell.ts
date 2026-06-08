@@ -94,6 +94,7 @@ export class Shell {
     { path: '/profesionales', label: 'Profesionales', icon: 'profesionales' },
     { path: '/prestaciones', label: 'Prestaciones', icon: 'prestaciones' },
     { path: '/importar', label: 'Importar Excel', icon: 'importar' },
+    { path: '/configuracion', label: 'Configuración', icon: 'config' },
   ];
 
   async salir() {
