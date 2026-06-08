@@ -9,6 +9,8 @@ import { CATEGORIAS, Prestacion } from '../../core/models/prestacion.model';
 import { ClpPipe } from '../../shared/pipes/clp.pipe';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { ToastService } from '../../shared/toast/toast.service';
+import { HistorialService } from '../../core/services/historial.service';
+import { RegistroHistorial } from '../../core/models/historial.model';
 import { Icon } from '../../shared/icon/icon';
 
 interface FilaPlanilla {
@@ -79,6 +81,10 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
         </label>
 
         <div class="ml-auto flex items-center gap-2">
+          <button (click)="abrirHistorial()"
+                  class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 text-gray-600 text-sm px-3 py-2 hover:bg-gray-50">
+            🕘 Historial
+          </button>
           <a [routerLink]="['/comprobante', l.id]"
              class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 text-gray-600 text-sm px-3 py-2 hover:bg-gray-50">
             ⎙ PDF
@@ -144,14 +150,16 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
               <tr class="hover:bg-brand-50/40 align-middle">
                 <td class="px-1.5 py-1 sticky left-0 bg-white z-10">
                   <input [value]="f.servicio" (input)="setCampo(i, 'servicio', $any($event.target).value)"
-                         [class.bg-green-50]="celdaModificada(i + '|servicio')"
-                         class="w-56 px-2 py-1.5 bg-transparent text-gray-800 rounded-md outline-none
+                         [class.bg-green-100]="celdaModificada(i + '|servicio')"
+                         [class.bg-transparent]="!celdaModificada(i + '|servicio')"
+                         class="w-56 px-2 py-1.5 text-gray-800 rounded-md outline-none
                                 focus:bg-white focus:ring-2 focus:ring-brand-200" />
                 </td>
                 <td class="px-1.5 py-1">
                   <select [value]="f.prevision" (change)="setCampo(i, 'prevision', $any($event.target).value)"
-                          [class.bg-green-50]="celdaModificada(i + '|prevision')"
-                          class="text-xs px-2 py-1.5 bg-transparent rounded-md outline-none cursor-pointer
+                          [class.bg-green-100]="celdaModificada(i + '|prevision')"
+                          [class.bg-transparent]="!celdaModificada(i + '|prevision')"
+                          class="text-xs px-2 py-1.5 rounded-md outline-none cursor-pointer
                                  focus:bg-white focus:ring-2 focus:ring-brand-200">
                     @for (p of previsiones; track p) { <option [value]="p">{{ p }}</option> }
                   </select>
@@ -159,8 +167,9 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
                 <td class="px-1.5 py-1">
                   <input type="number" inputmode="numeric" min="0" [value]="f.valorUnitario || ''"
                          (input)="setNumCampo(i, 'valorUnitario', $any($event.target).value)"
-                         [class.bg-green-50]="celdaModificada(i + '|valor')"
-                         class="w-24 px-2 py-1.5 bg-transparent text-right tabular-nums rounded-md outline-none
+                         [class.bg-green-100]="celdaModificada(i + '|valor')"
+                         [class.bg-transparent]="!celdaModificada(i + '|valor')"
+                         class="w-24 px-2 py-1.5 text-right tabular-nums rounded-md outline-none
                                 focus:bg-white focus:ring-2 focus:ring-brand-200" />
                 </td>
                 @for (c of columnasSemana(); track c) {
@@ -168,8 +177,9 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
                     @if (enMes(c)) {
                       <input type="number" inputmode="numeric" min="0" [value]="f.celdas[c] || ''"
                              (input)="setCelda(i, c, $any($event.target).value)"
-                             [class.bg-green-50]="celdaModificada(i + '|' + c)"
-                             class="w-12 px-1 py-1.5 bg-transparent text-center tabular-nums rounded-md outline-none
+                             [class.bg-green-100]="celdaModificada(i + '|' + c)"
+                             [class.bg-transparent]="!celdaModificada(i + '|' + c)"
+                             class="w-12 px-1 py-1.5 text-center tabular-nums rounded-md outline-none
                                     focus:bg-white focus:ring-2 focus:ring-brand-200" />
                     }
                   </td>
@@ -235,6 +245,51 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
           <span class="text-xl font-extrabold text-amber-700">{{ calculo().totalClinicaMes | clp }}</span>
         </div>
       </div>
+
+      <!-- ===== Historial de cambios ===== -->
+      @if (mostrarHistorial()) {
+        <div class="fixed inset-0 bg-black/40 grid place-items-center z-50 p-4" (click)="cerrarHistorial()">
+          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 max-h-[85vh] overflow-y-auto"
+               (click)="$event.stopPropagation()">
+            <div class="flex items-start justify-between mb-1">
+              <h2 class="text-lg font-bold text-gray-800">Historial de cambios</h2>
+              <button (click)="cerrarHistorial()" class="text-gray-400 hover:text-gray-600">
+                <app-icon name="close" [size]="20" />
+              </button>
+            </div>
+            <p class="text-xs text-gray-500 mb-4">
+              {{ l.profesional }} · {{ nombrePeriodo(l.periodo) }} · auditoría con fecha y hora (Chile)
+            </p>
+
+            @if (cargandoHistorial()) {
+              <p class="py-8 text-center text-gray-400">Cargando historial…</p>
+            } @else {
+              <ol class="relative border-l border-gray-200 ml-2">
+                @for (h of historialItems(); track h.id) {
+                  <li class="mb-5 ml-4">
+                    <span class="absolute -left-1.5 h-3 w-3 rounded-full bg-brand-500 border-2 border-white"></span>
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="text-sm font-semibold text-gray-800">{{ fechaCL(h.fecha) }}</span>
+                      <span class="text-xs px-2 py-0.5 rounded-full bg-brand-50 text-brand-700">{{ h.usuario }}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-0.5">{{ h.accion }}</p>
+                    <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-1">
+                      <span>Bruto: <b class="text-gray-700">{{ h.totalBruto | clp }}</b></span>
+                      <span>Doctor: <b class="text-brand-700">{{ h.totalProfesional | clp }}</b></span>
+                      <span>Arriendo: <b class="text-amber-700">{{ h.totalClinica | clp }}</b></span>
+                      <span>{{ h.nPrestaciones }} prestación(es)</span>
+                    </div>
+                  </li>
+                } @empty {
+                  <li class="ml-4 text-sm text-gray-400 py-4">
+                    Aún no hay registros. Guarda cambios para empezar a auditar.
+                  </li>
+                }
+              </ol>
+            }
+          </div>
+        </div>
+      }
 
       <!-- ===== Selector de prestación (catálogo) ===== -->
       @if (mostrarPicker()) {
@@ -318,6 +373,7 @@ export class Planilla implements PuedeSalir {
   private prestacionSvc = inject(PrestacionService);
   private confirm = inject(ConfirmService);
   private toast = inject(ToastService);
+  private historial = inject(HistorialService);
   private router = inject(Router);
   readonly nombrePeriodo = nombrePeriodo;
   readonly previsiones = PREVISIONES;
@@ -358,6 +414,11 @@ export class Planilla implements PuedeSalir {
       .map((x) => ({ id: x.id, periodo: x.periodo }))
       .sort((a, b) => b.periodo.localeCompare(a.periodo));
   });
+
+  // Historial de cambios
+  readonly mostrarHistorial = signal(false);
+  readonly historialItems = signal<RegistroHistorial[]>([]);
+  readonly cargandoHistorial = signal(false);
 
   // Picker de catálogo
   readonly mostrarPicker = signal(false);
@@ -561,6 +622,8 @@ export class Planilla implements PuedeSalir {
       await this.svc.guardarLiquidacion({ ...l, porcentajeClinica: this.porcentaje() / 100, items });
       this.semanasModificadas.set(new Set()); // guardado: ya no hay cambios pendientes
       this.celdasModificadas.set(new Set());
+      const guardada = this.svc.buscarPorId(l.id);
+      if (guardada) void this.historial.registrar(guardada);
       this.toast.exito('Cambios guardados en la nube');
     } catch {
       this.toast.error('No se pudo guardar. Revisa tu conexión.');
@@ -589,6 +652,27 @@ export class Planilla implements PuedeSalir {
       e.preventDefault();
       e.returnValue = '';
     }
+  }
+
+  // ───────── Historial ─────────
+  async abrirHistorial() {
+    const l = this.base();
+    if (!l) return;
+    this.mostrarHistorial.set(true);
+    this.cargandoHistorial.set(true);
+    this.historialItems.set(await this.historial.listar(l.id));
+    this.cargandoHistorial.set(false);
+  }
+  cerrarHistorial() {
+    this.mostrarHistorial.set(false);
+  }
+  /** Formatea ISO a fecha/hora chilena: "07-06-2026 23:45". */
+  fechaCL(iso: string): string {
+    return new Intl.DateTimeFormat('es-CL', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+      timeZone: 'America/Santiago',
+    }).format(new Date(iso));
   }
 
   // ───────── Helpers de fecha ─────────

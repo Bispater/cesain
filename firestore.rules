@@ -12,5 +12,8 @@ service cloud.firestore {
     match /profesionales/{id} {
       allow read, write: if true;
     }
+    match /historial/{id} {
+      allow read, write: if true;
+    }
   }
 }
