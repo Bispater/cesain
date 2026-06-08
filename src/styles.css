@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+/* ===== Paleta de marca "CESAIN" (basada en el diseño morado del login) ===== */
+@theme {
+  /* Violeta "deep purple" alineado al mockup del ERP CESAIN. */
+  --color-brand-50: #f3f0fb;
+  --color-brand-100: #e4def5;
+  --color-brand-200: #c8bce9;
+  --color-brand-300: #a892da;
+  --color-brand-400: #8a6bc9;
+  --color-brand-500: #7e57c2;
+  --color-brand-600: #673ab7;
+  --color-brand-700: #5e35b1;
+  --color-brand-800: #4527a0;
+  --color-brand-900: #311b92;
+
+  --color-accent: #f5c518;   /* amarillo (login original) */
+  --color-cesain: #5aa033;   /* verde del logo real CESAIN */
+
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family: var(--font-sans);
+  background: #f4f1f8;
+  color: #1f1530;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #d6c9ea;
+  border-radius: 99px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
