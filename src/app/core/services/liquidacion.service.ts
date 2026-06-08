@@ -7,6 +7,7 @@ import {
   ResumenValidacion,
 } from '../models/liquidacion.model';
 import { RAW_EXCEL_TABS, RawExcelTab } from '../data/raw-excel.mock';
+import { Profesional } from '../models/profesional.model';
 import { LIQUIDACION_REPOSITORY } from '../repositories/liquidacion.repository';
 
 export type EstadoCarga =
@@ -214,6 +215,7 @@ export class LiquidacionService {
     const nueva: Liquidacion = {
       id,
       profesional: prof.nombre,
+      profesionalId: prof.id,
       especialidad: prof.especialidad,
       tipoProfesional: prof.tipoProfesional,
       sede: prof.sede,
@@ -229,6 +231,28 @@ export class LiquidacionService {
     this._liquidaciones.update((arr) => [nueva, ...arr]);
     void this.repo.guardar(nueva);
     return nueva;
+  }
+
+  /**
+   * Asocia cada liquidación a un profesional del catálogo (por ID, o por nombre
+   * si aún no tiene) y sincroniza el nombre mostrado con el del catálogo.
+   * Persiste solo las que cambian. Idempotente (no hace nada si ya están ok).
+   */
+  sincronizarProfesionales(profs: Profesional[]): void {
+    if (!profs.length || !this._liquidaciones().length) return;
+    let cambio = false;
+    const actualizadas = this._liquidaciones().map((l) => {
+      let prof = l.profesionalId ? profs.find((p) => p.id === l.profesionalId) : undefined;
+      if (!prof) prof = emparejarProfesional(l.profesional, profs);
+      if (prof && (l.profesionalId !== prof.id || l.profesional !== prof.nombre)) {
+        cambio = true;
+        const nueva = { ...l, profesionalId: prof.id, profesional: prof.nombre };
+        void this.repo.guardar(nueva);
+        return nueva;
+      }
+      return l;
+    });
+    if (cambio) this._liquidaciones.set(actualizadas);
   }
 
   // ───────────────────── Edición (planilla tipo Excel) ─────────────────────
@@ -353,6 +377,30 @@ export class LiquidacionService {
 // ───────────────────────── Helpers puros ─────────────────────────
 function sum<T>(arr: T[], fn: (x: T) => number): number {
   return arr.reduce((acc, x) => acc + fn(x), 0);
+}
+
+/** Tokens normalizados de un nombre (sin tildes, sin títulos, sin iniciales). */
+function tokens(nombre: string): string[] {
+  return nombre
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter((t) => t.length > 1 && !['dr', 'dra', 'klgo', 'klga', 'kine', 'tm', 'tec', 'md'].includes(t));
+}
+
+/** Empareja un nombre de liquidación con el profesional de mayor coincidencia. */
+function emparejarProfesional(nombre: string, profs: Profesional[]): Profesional | undefined {
+  const a = new Set(tokens(nombre));
+  let mejor: Profesional | undefined;
+  let mejorScore = 0;
+  for (const p of profs) {
+    const b = tokens(p.nombre);
+    const score = b.filter((t) => a.has(t)).length;
+    if (score > mejorScore) { mejorScore = score; mejor = p; }
+  }
+  return mejorScore > 0 ? mejor : undefined;
 }
 
 /** Recalcula montos de cada ítem y los totales de la liquidación. */

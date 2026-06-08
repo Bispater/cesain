@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet, Router } from '@angular/router';
 import { AuthService } from '../core/services/auth.service';
+import { ProfesionalService } from '../core/services/profesional.service';
 import { ConfirmDialog } from '../shared/confirm/confirm-dialog';
 import { Icon, IconName } from '../shared/icon/icon';
 import { Toast } from '../shared/toast/toast';
@@ -83,6 +84,8 @@ import { Toast } from '../shared/toast/toast';
 export class Shell {
   readonly auth = inject(AuthService);
   private router = inject(Router);
+  // Se instancia aquí para que la sincronización profesional↔liquidaciones corra siempre.
+  private prof = inject(ProfesionalService);
   readonly menuAbierto = signal(false);
 
   readonly nav: { path: string; label: string; icon: IconName }[] = [

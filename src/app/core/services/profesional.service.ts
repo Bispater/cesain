@@ -1,11 +1,13 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { TipoProfesional } from '../models/liquidacion.model';
 import { Profesional } from '../models/profesional.model';
 import { PROFESIONAL_REPOSITORY } from '../repositories/profesional.repository';
+import { LiquidacionService } from './liquidacion.service';
 
 @Injectable({ providedIn: 'root' })
 export class ProfesionalService {
   private repo = inject(PROFESIONAL_REPOSITORY);
+  private liquidacionSvc = inject(LiquidacionService);
 
   private readonly _items = signal<Profesional[]>([]);
   readonly items = this._items.asReadonly();
@@ -33,6 +35,13 @@ export class ProfesionalService {
 
   constructor() {
     this.cargar();
+    // Asocia y sincroniza los nombres de las liquidaciones con el catálogo,
+    // tanto al cargar como cada vez que se edita un profesional.
+    effect(() => {
+      const profs = this.items();
+      const liqs = this.liquidacionSvc.liquidaciones();
+      if (profs.length && liqs.length) this.liquidacionSvc.sincronizarProfesionales(profs);
+    });
   }
 
   async cargar() {

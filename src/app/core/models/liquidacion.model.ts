@@ -41,8 +41,10 @@ export interface ItemLiquidacion {
  */
 export interface Liquidacion {
   id: string;
-  /** Nombre del profesional (normalizado, sin "DR." / "DRA." sucios). */
+  /** Nombre del profesional (sincronizado desde el catálogo de profesionales). */
   profesional: string;
+  /** ID del profesional en el catálogo (asociación que mantiene el nombre en sync). */
+  profesionalId?: string;
   especialidad: string;
   tipoProfesional: TipoProfesional;
   /** Sede / sucursal (Valparaíso, Quintero...). */
