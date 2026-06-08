@@ -125,7 +125,7 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
               <th class="px-3 py-2.5 text-left">Previsión</th>
               <th class="px-3 py-2.5 text-right">Valor</th>
               @for (c of columnasSemana(); track c) {
-                <th class="px-2 py-2 text-center whitespace-nowrap"
+                <th class="w-14 px-2 py-2 text-center whitespace-nowrap"
                     [class.text-brand-300]="!enMes(c)">
                   <div class="leading-tight">
                     <div class="text-[10px] font-normal lowercase opacity-80">{{ diaSemana(c) }}</div>
@@ -164,7 +164,7 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
                                 focus:bg-white focus:ring-2 focus:ring-brand-200" />
                 </td>
                 @for (c of columnasSemana(); track c) {
-                  <td class="px-1 py-1 text-center" [class.bg-gray-100]="!enMes(c)">
+                  <td class="w-14 px-1 py-1 text-center" [class.bg-gray-200]="!enMes(c)">
                     @if (enMes(c)) {
                       <input type="number" inputmode="numeric" min="0" [value]="f.celdas[c] || ''"
                              (input)="setCelda(i, c, $any($event.target).value)"
