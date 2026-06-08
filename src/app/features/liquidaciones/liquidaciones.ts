@@ -2,8 +2,10 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { LiquidacionService } from '../../core/services/liquidacion.service';
 import { ProfesionalService } from '../../core/services/profesional.service';
-import { nombrePeriodo } from '../../core/models/liquidacion.model';
+import { Liquidacion, nombrePeriodo } from '../../core/models/liquidacion.model';
 import { ClpPipe } from '../../shared/pipes/clp.pipe';
+import { ConfirmService } from '../../shared/confirm/confirm.service';
+import { ToastService } from '../../shared/toast/toast.service';
 
 @Component({
   selector: 'app-liquidaciones',
@@ -16,10 +18,16 @@ import { ClpPipe } from '../../shared/pipes/clp.pipe';
           Filtra por profesional y por período REAL (no por el nombre del archivo).
         </p>
       </div>
-      <button (click)="abrirNueva()"
-              class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-4 py-2 shadow-md">
-        + Nueva liquidación
-      </button>
+      <div class="flex items-center gap-2">
+        <button (click)="mostrarPapelera.set(true)"
+                class="rounded-lg border border-gray-200 bg-white text-gray-600 text-sm font-medium px-3 py-2 hover:bg-gray-50">
+          🗑 Papelera @if (svc.eliminadas().length) { ({{ svc.eliminadas().length }}) }
+        </button>
+        <button (click)="abrirNueva()"
+                class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-4 py-2 shadow-md">
+          + Nueva liquidación
+        </button>
+      </div>
     </header>
 
     <!-- Filtros -->
@@ -90,6 +98,14 @@ import { ClpPipe } from '../../shared/pipes/clp.pipe';
                      class="rounded-lg border border-gray-200 text-gray-600 text-xs px-2.5 py-1.5 hover:bg-gray-50">
                     PDF
                   </a>
+                  <button (click)="eliminar(l, $event)" title="Eliminar"
+                          class="h-7 w-7 grid place-items-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6"/>
+                      <line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+                    </svg>
+                  </button>
                   <span class="text-gray-400 w-4 text-center">{{ abierto() === l.id ? '▲' : '▼' }}</span>
                 </div>
               </td>
@@ -155,6 +171,46 @@ import { ClpPipe } from '../../shared/pipes/clp.pipe';
       </table>
     </div>
 
+    <!-- ===== Modal Papelera ===== -->
+    @if (mostrarPapelera()) {
+      <div class="fixed inset-0 bg-black/40 grid place-items-center z-50 p-4" (click)="mostrarPapelera.set(false)">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 max-h-[85vh] overflow-y-auto"
+             (click)="$event.stopPropagation()">
+          <h2 class="text-lg font-bold text-gray-800 mb-1">Papelera de liquidaciones</h2>
+          <p class="text-xs text-gray-500 mb-4">Liquidaciones eliminadas. Puedes restaurarlas o borrarlas para siempre.</p>
+
+          @for (l of svc.eliminadas(); track l.id) {
+            <div class="flex flex-wrap items-center justify-between gap-3 py-3 border-b border-gray-100">
+              <div>
+                <p class="text-sm font-medium text-gray-800">{{ l.profesional }} · {{ nombrePeriodo(l.periodo) }}</p>
+                <p class="text-xs text-gray-400">
+                  {{ l.especialidad }} · {{ l.totalBruto | clp }} ·
+                  eliminada {{ fechaCL(l.eliminadaEn) }} por {{ l.eliminadaPor }}
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button (click)="restaurar(l)"
+                        class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-3 py-1.5">
+                  Restaurar
+                </button>
+                <button (click)="eliminarDefinitivo(l)"
+                        class="rounded-lg border border-red-200 text-red-600 text-xs px-3 py-1.5 hover:bg-red-50">
+                  Eliminar definitivamente
+                </button>
+              </div>
+            </div>
+          } @empty {
+            <p class="py-8 text-center text-gray-400">La papelera está vacía.</p>
+          }
+
+          <div class="flex justify-end mt-5">
+            <button (click)="mostrarPapelera.set(false)"
+                    class="rounded-lg border border-gray-200 text-gray-600 px-4 py-2 text-sm hover:bg-gray-50">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    }
+
     <!-- ===== Modal Nueva liquidación ===== -->
     @if (mostrarNueva()) {
       <div class="fixed inset-0 bg-black/40 grid place-items-center z-50 p-4" (click)="cerrarNueva()">
@@ -196,8 +252,11 @@ import { ClpPipe } from '../../shared/pipes/clp.pipe';
 export class Liquidaciones {
   readonly svc = inject(LiquidacionService);
   readonly profSvc = inject(ProfesionalService);
+  private confirm = inject(ConfirmService);
+  private toast = inject(ToastService);
   private router = inject(Router);
   readonly nombrePeriodo = nombrePeriodo;
+  readonly mostrarPapelera = signal(false);
 
   readonly busqueda = signal('');
   readonly abierto = signal<string | null>(null);
@@ -237,6 +296,44 @@ export class Liquidaciones {
     const liq = this.svc.crearLiquidacion(prof, this.mesSel());
     this.cerrarNueva();
     this.router.navigate(['/planilla', liq.id]);
+  }
+
+  async eliminar(l: Liquidacion, ev: Event) {
+    ev.stopPropagation();
+    const ok = await this.confirm.ask({
+      titulo: 'Eliminar liquidación',
+      mensaje: `¿Enviar a la papelera la liquidación de ${l.profesional} (${nombrePeriodo(l.periodo)})? Podrás recuperarla después.`,
+      confirmar: 'Eliminar',
+      tono: 'peligro',
+    });
+    if (!ok) return;
+    await this.svc.eliminarLiquidacion(l.id);
+    this.toast.exito('Enviada a la papelera');
+  }
+
+  async restaurar(l: Liquidacion) {
+    await this.svc.restaurarLiquidacion(l.id);
+    this.toast.exito('Liquidación restaurada');
+  }
+
+  async eliminarDefinitivo(l: Liquidacion) {
+    const ok = await this.confirm.ask({
+      titulo: 'Eliminar definitivamente',
+      mensaje: `Esto NO se puede deshacer. ¿Eliminar para siempre la liquidación de ${l.profesional} (${nombrePeriodo(l.periodo)})?`,
+      confirmar: 'Eliminar para siempre',
+      tono: 'peligro',
+    });
+    if (!ok) return;
+    await this.svc.eliminarDefinitivo(l.id);
+    this.toast.exito('Eliminada definitivamente');
+  }
+
+  fechaCL(iso?: string): string {
+    if (!iso) return '';
+    return new Intl.DateTimeFormat('es-CL', {
+      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+      timeZone: 'America/Santiago',
+    }).format(new Date(iso));
   }
 
   badgePrevision(p: string): string {

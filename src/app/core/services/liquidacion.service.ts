@@ -9,6 +9,7 @@ import {
 import { RAW_EXCEL_TABS, RawExcelTab } from '../data/raw-excel.mock';
 import { Profesional } from '../models/profesional.model';
 import { LIQUIDACION_REPOSITORY } from '../repositories/liquidacion.repository';
+import { AuthService } from './auth.service';
 
 export type EstadoCarga =
   | 'idle'
@@ -43,6 +44,7 @@ interface Normalizado {
 @Injectable({ providedIn: 'root' })
 export class LiquidacionService {
   private readonly repo = inject(LIQUIDACION_REPOSITORY);
+  private readonly auth = inject(AuthService);
 
   // Normalización inicial del Excel "sucio" (semilla si la DB está vacía).
   private readonly _inicial = this.normalizar([...RAW_EXCEL_TABS]);
@@ -54,6 +56,14 @@ export class LiquidacionService {
   readonly liquidaciones = this._liquidaciones.asReadonly();
   readonly validacion = this._validacion.asReadonly();
   readonly cargando = signal(true);
+
+  /** Activas (no en papelera) y eliminadas (papelera). */
+  readonly activas = computed(() => this._liquidaciones().filter((l) => !l.eliminada));
+  readonly eliminadas = computed(() =>
+    this._liquidaciones()
+      .filter((l) => l.eliminada)
+      .sort((a, b) => (b.eliminadaEn ?? '').localeCompare(a.eliminadaEn ?? '')),
+  );
 
   constructor() {
     this.cargar();
@@ -85,19 +95,19 @@ export class LiquidacionService {
   readonly estadoCarga = signal<EstadoCarga>('idle');
   readonly logCarga = signal<PasoCarga[]>([]);
 
-  // ─────────────────────── Selectores derivados ───────────────────────
+  // ─────────────────────── Selectores derivados (solo activas) ───────────────────────
   readonly profesionales = computed(() =>
-    [...new Set(this.liquidaciones().map((l) => l.profesional))].sort(),
+    [...new Set(this.activas().map((l) => l.profesional))].sort(),
   );
 
   readonly periodos = computed(() =>
-    [...new Set(this.liquidaciones().map((l) => l.periodo))].sort().reverse(),
+    [...new Set(this.activas().map((l) => l.periodo))].sort().reverse(),
   );
 
   readonly liquidacionesFiltradas = computed(() => {
     const prof = this.filtroProfesional();
     const per = this.filtroPeriodo();
-    return this.liquidaciones().filter(
+    return this.activas().filter(
       (l) =>
         (prof === 'TODOS' || l.profesional === prof) &&
         (per === 'TODOS' || l.periodo === per),
@@ -148,7 +158,39 @@ export class LiquidacionService {
 
   /** Liquidaciones de un período, agrupadas por profesional (para comparar). */
   porPeriodo(periodo: string): Liquidacion[] {
-    return this.liquidaciones().filter((l) => l.periodo === periodo);
+    return this.activas().filter((l) => l.periodo === periodo);
+  }
+
+  // ───────────────────── Papelera (borrado lógico) ─────────────────────
+  /** Envía una liquidación a la papelera (recuperable). */
+  async eliminarLiquidacion(id: string): Promise<void> {
+    const l = this.buscarPorId(id);
+    if (!l) return;
+    const eliminada: Liquidacion = {
+      ...l,
+      eliminada: true,
+      eliminadaEn: new Date().toISOString(),
+      eliminadaPor: this.auth.usuario()?.email ?? '—',
+    };
+    this._liquidaciones.update((arr) => arr.map((x) => (x.id === id ? eliminada : x)));
+    await this.repo.guardar(eliminada);
+  }
+
+  /** Restaura una liquidación desde la papelera. */
+  async restaurarLiquidacion(id: string): Promise<void> {
+    const l = this.buscarPorId(id);
+    if (!l) return;
+    const restaurada: Liquidacion = { ...l, eliminada: false };
+    delete restaurada.eliminadaEn; // omitidos (evita undefined en Firestore)
+    delete restaurada.eliminadaPor;
+    this._liquidaciones.update((arr) => arr.map((x) => (x.id === id ? restaurada : x)));
+    await this.repo.guardar(restaurada);
+  }
+
+  /** Elimina definitivamente (no recuperable). */
+  async eliminarDefinitivo(id: string): Promise<void> {
+    this._liquidaciones.update((arr) => arr.filter((x) => x.id !== id));
+    await this.repo.eliminar(id);
   }
 
   // ───────────────────────── Acciones ─────────────────────────

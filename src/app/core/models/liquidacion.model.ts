@@ -66,6 +66,11 @@ export interface Liquidacion {
   totalProfesional: number;
   /** Total de pacientes/prestaciones del período. */
   totalPacientes: number;
+
+  /** Borrado lógico: si está en la papelera. */
+  eliminada?: boolean;
+  eliminadaEn?: string;   // ISO
+  eliminadaPor?: string;  // email
 }
 
 /** Tipos de incidencia detectados al normalizar el Excel "sucio". */

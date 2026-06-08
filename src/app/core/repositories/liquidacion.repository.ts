@@ -6,6 +6,7 @@ export interface LiquidacionRepository {
   listar(): Promise<Liquidacion[]>;
   guardar(l: Liquidacion): Promise<void>;
   guardarTodo(ls: Liquidacion[]): Promise<void>;
+  eliminar(id: string): Promise<void>;
 }
 
 export const LIQUIDACION_REPOSITORY = new InjectionToken<LiquidacionRepository>(

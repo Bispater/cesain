@@ -28,4 +28,9 @@ export class LocalLiquidacionRepository implements LiquidacionRepository {
   async guardarTodo(ls: Liquidacion[]): Promise<void> {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(ls));
   }
+
+  async eliminar(id: string): Promise<void> {
+    const items = (await this.listar()).filter((x) => x.id !== id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  }
 }

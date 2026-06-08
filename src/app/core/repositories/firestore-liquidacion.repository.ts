@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { collection, doc, getDocs, setDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore';
 import { firestore } from '../firebase';
 import { Liquidacion } from '../models/liquidacion.model';
 import { LiquidacionRepository } from './liquidacion.repository';
@@ -21,5 +21,9 @@ export class FirestoreLiquidacionRepository implements LiquidacionRepository {
 
   async guardarTodo(ls: Liquidacion[]): Promise<void> {
     await Promise.all(ls.map((l) => setDoc(doc(this.db, this.col, l.id), l)));
+  }
+
+  async eliminar(id: string): Promise<void> {
+    await deleteDoc(doc(this.db, this.col, id));
   }
 }
