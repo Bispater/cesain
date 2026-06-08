@@ -42,7 +42,7 @@ function vacio(): Profesional {
       <select [value]="svc.filtroSede()" (change)="svc.filtroSede.set($any($event.target).value)"
               class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-200">
         <option value="TODAS">Todas las sedes</option>
-        @for (s of svc.sedes(); track s) { <option [value]="s">{{ s }}</option> }
+        @for (s of cat.sedes(); track s.id) { <option [value]="s.nombre">{{ s.nombre }}</option> }
       </select>
       <span class="text-sm text-gray-400 ml-auto">{{ svc.filtradas().length }} profesional(es)</span>
     </div>

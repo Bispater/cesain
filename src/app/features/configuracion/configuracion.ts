@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { CatalogosService, ItemCatalogo } from '../../core/services/catalogos.service';
+import { ProfesionalService } from '../../core/services/profesional.service';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { ToastService } from '../../shared/toast/toast.service';
 
@@ -74,6 +75,7 @@ import { ToastService } from '../../shared/toast/toast.service';
 })
 export class Configuracion {
   readonly cat = inject(CatalogosService);
+  private profSvc = inject(ProfesionalService);
   private confirm = inject(ConfirmService);
   private toast = inject(ToastService);
 
@@ -97,9 +99,20 @@ export class Configuracion {
   }
 
   async eliminar(que: 'tipo' | 'sede', item: ItemCatalogo) {
+    // No permitir eliminar si está ligado a profesionales existentes.
+    const enUso = this.profSvc.items().filter((p) =>
+      que === 'tipo' ? p.tipoProfesional === item.id : p.sede === item.nombre,
+    ).length;
+    if (enUso > 0) {
+      this.toast.error(
+        `No se puede eliminar "${item.nombre}": está asignado a ${enUso} profesional(es).`,
+      );
+      return;
+    }
+
     const ok = await this.confirm.ask({
       titulo: que === 'tipo' ? 'Eliminar tipo' : 'Eliminar sede',
-      mensaje: `¿Eliminar "${item.nombre}"? Los profesionales que ya lo tengan no se modifican.`,
+      mensaje: `¿Eliminar "${item.nombre}"?`,
       confirmar: 'Eliminar',
       tono: 'peligro',
     });
