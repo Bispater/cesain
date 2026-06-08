@@ -1,6 +1,7 @@
-import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, HostListener, computed, effect, inject, input, signal } from '@angular/core';
 import { SlicePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
+import { PuedeSalir } from '../../core/guards/unsaved.guard';
 import { LiquidacionService, nuevoItemId } from '../../core/services/liquidacion.service';
 import { PrestacionService } from '../../core/services/prestacion.service';
 import { ItemLiquidacion, Liquidacion, Prevision, nombrePeriodo } from '../../core/models/liquidacion.model';
@@ -100,7 +101,9 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
                       : 'text-gray-500 hover:text-gray-700'">
               Sem {{ idx + 1 }}
               <span class="opacity-60 hidden sm:inline">· {{ s.label }}</span>
-              @if (semanaTieneData(s)) {
+              @if (semanasModificadas().has(idx)) {
+                <span class="h-1.5 w-1.5 rounded-full bg-amber-500" title="Cambios sin guardar"></span>
+              } @else if (semanaTieneData(s)) {
                 <span class="h-1.5 w-1.5 rounded-full bg-brand-500"></span>
               }
             </button>
@@ -303,7 +306,7 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
     }
   `,
 })
-export class Planilla {
+export class Planilla implements PuedeSalir {
   private svc = inject(LiquidacionService);
   private prestacionSvc = inject(PrestacionService);
   private confirm = inject(ConfirmService);
@@ -322,6 +325,10 @@ export class Planilla {
   readonly guardado = signal(false);
   readonly guardando = signal(false);
   private inicializadoId: string | null = null;
+
+  /** Índices de semanas con cambios sin guardar (para el puntito ámbar). */
+  readonly semanasModificadas = signal<Set<number>>(new Set());
+  readonly hayCambios = computed(() => this.semanasModificadas().size > 0);
 
   // Semanas del mes
   readonly semanas = computed<Semana[]>(() => {
@@ -397,6 +404,7 @@ export class Planilla {
     const semanas = semanasDeMes(l.periodo);
     const idx = semanas.findIndex((s) => s.dias.some((d) => fechas.has(d)));
     this.semanaSel.set(idx < 0 ? 0 : idx);
+    this.semanasModificadas.set(new Set()); // recién cargada: sin cambios
   }
 
   // ───────── Cálculo (totales del MES; columnas de la semana visible) ─────────
@@ -426,7 +434,13 @@ export class Planilla {
   });
 
   // ───────── Edición ─────────
-  private bump() { this.filas.set([...this.filas()]); }
+  private bump() { this.filas.set([...this.filas()]); this.marcarCambio(); }
+
+  /** Marca la semana visible como modificada (puntito ámbar + aviso al salir). */
+  private marcarCambio() {
+    const idx = this.semanaSel();
+    this.semanasModificadas.update((s) => new Set(s).add(idx));
+  }
 
   setCelda(i: number, col: string, val: string) {
     this.filas()[i].celdas[col] = Math.max(0, Math.floor(+val || 0));
@@ -442,6 +456,7 @@ export class Planilla {
   }
   setPorcentaje(val: string) {
     this.porcentaje.set(Math.min(100, Math.max(0, +val || 0)));
+    this.marcarCambio();
   }
 
   cambiarMes(id: string) {
@@ -457,6 +472,7 @@ export class Planilla {
       ...fs,
       { servicio: p.nombre, prevision: p.prevision, valorUnitario: p.valorBono, copagoUnit: p.valorCopago, celdas: {} },
     ]);
+    this.marcarCambio();
     this.cerrarPicker();
   }
 
@@ -480,6 +496,7 @@ export class Planilla {
       });
     }
     this.nuevoNombre.set(''); this.nuevoValor.set(0); this.nuevoCopago.set(0);
+    this.marcarCambio();
     this.cerrarPicker();
   }
 
@@ -491,7 +508,7 @@ export class Planilla {
       confirmar: 'Eliminar',
       tono: 'peligro',
     });
-    if (ok) this.filas.update((fs) => fs.filter((_, idx) => idx !== i));
+    if (ok) { this.filas.update((fs) => fs.filter((_, idx) => idx !== i)); this.marcarCambio(); }
   }
 
   // ───────── Persistencia ─────────
@@ -517,10 +534,33 @@ export class Planilla {
     this.guardando.set(true);
     try {
       await this.svc.guardarLiquidacion({ ...l, porcentajeClinica: this.porcentaje() / 100, items });
+      this.semanasModificadas.set(new Set()); // guardado: ya no hay cambios pendientes
       this.guardado.set(true);
       setTimeout(() => this.guardado.set(false), 2500);
     } finally {
       this.guardando.set(false);
+    }
+  }
+
+  // ───────── Aviso de cambios sin guardar ─────────
+  /** Lo usa el guard de ruta: pregunta antes de salir si hay cambios. */
+  puedeSalir(): boolean | Promise<boolean> {
+    if (!this.hayCambios()) return true;
+    return this.confirm.ask({
+      titulo: 'Cambios sin guardar',
+      mensaje: 'Tienes cambios en esta planilla que no se han guardado. ¿Salir de todas formas?',
+      confirmar: 'Salir sin guardar',
+      cancelar: 'Seguir editando',
+      tono: 'peligro',
+    });
+  }
+
+  /** Aviso del navegador al cerrar/recargar la pestaña. */
+  @HostListener('window:beforeunload', ['$event'])
+  avisarCierre(e: BeforeUnloadEvent) {
+    if (this.hayCambios()) {
+      e.preventDefault();
+      e.returnValue = '';
     }
   }
 

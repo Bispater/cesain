@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { unsavedGuard } from './core/guards/unsaved.guard';
 import { Shell } from './layout/shell';
 
 export const routes: Routes = [
@@ -33,6 +34,7 @@ export const routes: Routes = [
         path: 'planilla/:id',
         loadComponent: () =>
           import('./features/planilla/planilla').then((m) => m.Planilla),
+        canDeactivate: [unsavedGuard],
       },
       {
         path: 'profesionales',
