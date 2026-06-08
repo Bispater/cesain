@@ -8,6 +8,7 @@ import { ItemLiquidacion, Liquidacion, Prevision, nombrePeriodo } from '../../co
 import { CATEGORIAS, Prestacion } from '../../core/models/prestacion.model';
 import { ClpPipe } from '../../shared/pipes/clp.pipe';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
+import { ToastService } from '../../shared/toast/toast.service';
 import { Icon } from '../../shared/icon/icon';
 
 interface FilaPlanilla {
@@ -143,27 +144,31 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
               <tr class="hover:bg-brand-50/40 align-middle">
                 <td class="px-1.5 py-1 sticky left-0 bg-white z-10">
                   <input [value]="f.servicio" (input)="setCampo(i, 'servicio', $any($event.target).value)"
+                         [class.bg-green-50]="celdaModificada(i + '|servicio')"
                          class="w-56 px-2 py-1.5 bg-transparent text-gray-800 rounded-md outline-none
                                 focus:bg-white focus:ring-2 focus:ring-brand-200" />
                 </td>
                 <td class="px-1.5 py-1">
                   <select [value]="f.prevision" (change)="setCampo(i, 'prevision', $any($event.target).value)"
+                          [class.bg-green-50]="celdaModificada(i + '|prevision')"
                           class="text-xs px-2 py-1.5 bg-transparent rounded-md outline-none cursor-pointer
                                  focus:bg-white focus:ring-2 focus:ring-brand-200">
                     @for (p of previsiones; track p) { <option [value]="p">{{ p }}</option> }
                   </select>
                 </td>
                 <td class="px-1.5 py-1">
-                  <input type="number" [value]="f.valorUnitario"
+                  <input type="number" inputmode="numeric" min="0" [value]="f.valorUnitario || ''"
                          (input)="setNumCampo(i, 'valorUnitario', $any($event.target).value)"
+                         [class.bg-green-50]="celdaModificada(i + '|valor')"
                          class="w-24 px-2 py-1.5 bg-transparent text-right tabular-nums rounded-md outline-none
                                 focus:bg-white focus:ring-2 focus:ring-brand-200" />
                 </td>
                 @for (c of columnasSemana(); track c) {
                   <td class="px-1 py-1 text-center" [class.bg-gray-100]="!enMes(c)">
                     @if (enMes(c)) {
-                      <input type="number" [value]="f.celdas[c] || ''"
+                      <input type="number" inputmode="numeric" min="0" [value]="f.celdas[c] || ''"
                              (input)="setCelda(i, c, $any($event.target).value)"
+                             [class.bg-green-50]="celdaModificada(i + '|' + c)"
                              class="w-12 px-1 py-1.5 bg-transparent text-center tabular-nums rounded-md outline-none
                                     focus:bg-white focus:ring-2 focus:ring-brand-200" />
                     }
@@ -210,8 +215,8 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
 
       <!-- Guardar (debajo, a la derecha de la tabla) -->
       <div class="flex flex-wrap items-center justify-end gap-3 mt-3">
-        @if (guardado()) {
-          <span class="text-sm text-green-700 mr-auto">✓ Guardado en la nube.</span>
+        @if (hayCambios()) {
+          <span class="text-sm text-amber-600 mr-auto">● Tienes cambios sin guardar</span>
         }
         <button (click)="guardar()" [disabled]="guardando()"
                 class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 shadow-sm disabled:opacity-60">
@@ -274,11 +279,13 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
                   @for (c of categorias; track c) { <option [value]="c">{{ c }}</option> }
                 </select>
                 <label class="text-xs text-gray-500">Valor bono
-                  <input type="number" [value]="nuevoValor()" (input)="nuevoValor.set(+$any($event.target).value)"
+                  <input type="number" inputmode="numeric" min="0" [value]="nuevoValor() || ''"
+                         (input)="nuevoValor.set(noNeg($any($event.target).value))"
                          class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-right outline-none focus:ring-2 focus:ring-brand-200" />
                 </label>
                 <label class="text-xs text-gray-500">Copago
-                  <input type="number" [value]="nuevoCopago()" (input)="nuevoCopago.set(+$any($event.target).value)"
+                  <input type="number" inputmode="numeric" min="0" [value]="nuevoCopago() || ''"
+                         (input)="nuevoCopago.set(noNeg($any($event.target).value))"
                          class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-right outline-none focus:ring-2 focus:ring-brand-200" />
                 </label>
               </div>
@@ -310,6 +317,7 @@ export class Planilla implements PuedeSalir {
   private svc = inject(LiquidacionService);
   private prestacionSvc = inject(PrestacionService);
   private confirm = inject(ConfirmService);
+  private toast = inject(ToastService);
   private router = inject(Router);
   readonly nombrePeriodo = nombrePeriodo;
   readonly previsiones = PREVISIONES;
@@ -329,6 +337,8 @@ export class Planilla implements PuedeSalir {
   /** Índices de semanas con cambios sin guardar (para el puntito ámbar). */
   readonly semanasModificadas = signal<Set<number>>(new Set());
   readonly hayCambios = computed(() => this.semanasModificadas().size > 0);
+  /** Claves de celdas/campos recién editados (para el resaltado verde). */
+  readonly celdasModificadas = signal<Set<string>>(new Set());
 
   // Semanas del mes
   readonly semanas = computed<Semana[]>(() => {
@@ -405,6 +415,7 @@ export class Planilla implements PuedeSalir {
     const idx = semanas.findIndex((s) => s.dias.some((d) => fechas.has(d)));
     this.semanaSel.set(idx < 0 ? 0 : idx);
     this.semanasModificadas.set(new Set()); // recién cargada: sin cambios
+    this.celdasModificadas.set(new Set());
   }
 
   // ───────── Cálculo (totales del MES; columnas de la semana visible) ─────────
@@ -441,17 +452,31 @@ export class Planilla implements PuedeSalir {
     const idx = this.semanaSel();
     this.semanasModificadas.update((s) => new Set(s).add(idx));
   }
+  /** Resalta en verde una celda/campo recién editado. */
+  private marcarCelda(clave: string) {
+    this.celdasModificadas.update((s) => new Set(s).add(clave));
+  }
+  celdaModificada(clave: string): boolean {
+    return this.celdasModificadas().has(clave);
+  }
+  /** Convierte a número no negativo (para inputs). */
+  noNeg(v: string): number {
+    return Math.max(0, +v || 0);
+  }
 
   setCelda(i: number, col: string, val: string) {
     this.filas()[i].celdas[col] = Math.max(0, Math.floor(+val || 0));
+    this.marcarCelda(i + '|' + col);
     this.bump();
   }
   setNumCampo(i: number, campo: 'valorUnitario', val: string) {
     this.filas()[i][campo] = Math.max(0, +val || 0);
+    this.marcarCelda(i + '|valor');
     this.bump();
   }
   setCampo(i: number, campo: 'servicio' | 'prevision', val: string) {
     (this.filas()[i] as any)[campo] = val;
+    this.marcarCelda(i + '|' + campo);
     this.bump();
   }
   setPorcentaje(val: string) {
@@ -535,8 +560,10 @@ export class Planilla implements PuedeSalir {
     try {
       await this.svc.guardarLiquidacion({ ...l, porcentajeClinica: this.porcentaje() / 100, items });
       this.semanasModificadas.set(new Set()); // guardado: ya no hay cambios pendientes
-      this.guardado.set(true);
-      setTimeout(() => this.guardado.set(false), 2500);
+      this.celdasModificadas.set(new Set());
+      this.toast.exito('Cambios guardados en la nube');
+    } catch {
+      this.toast.error('No se pudo guardar. Revisa tu conexión.');
     } finally {
       this.guardando.set(false);
     }

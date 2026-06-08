@@ -5,6 +5,7 @@ import { CATEGORIAS, Prestacion } from '../../core/models/prestacion.model';
 import { Prevision } from '../../core/models/liquidacion.model';
 import { ClpPipe } from '../../shared/pipes/clp.pipe';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
+import { ToastService } from '../../shared/toast/toast.service';
 
 const PREVISIONES: Prevision[] = ['FONASA', 'ISAPRE', 'PARTICULAR'];
 
@@ -178,6 +179,7 @@ function vacia(): Prestacion {
 export class Prestaciones {
   readonly svc = inject(PrestacionService);
   private confirm = inject(ConfirmService);
+  private toast = inject(ToastService);
   readonly previsiones = PREVISIONES;
   readonly categorias = CATEGORIAS;
   readonly chips: ('TODAS' | Prevision)[] = ['TODAS', 'FONASA', 'ISAPRE', 'PARTICULAR'];
@@ -218,6 +220,7 @@ export class Prestaciones {
         await this.svc.crear({ ...d, id, valorBono: +d.valorBono, valorCopago: +d.valorCopago });
       }
       this.cerrar();
+      this.toast.exito(this.editandoId() ? 'Prestación actualizada' : 'Prestación creada');
     } catch (e) {
       this.errorForm.set('No se pudo guardar: ' + (e as Error).message);
     } finally {
@@ -232,7 +235,7 @@ export class Prestaciones {
       confirmar: 'Eliminar',
       tono: 'peligro',
     });
-    if (ok) await this.svc.eliminar(p.id);
+    if (ok) { await this.svc.eliminar(p.id); this.toast.exito('Prestación eliminada'); }
   }
 
   badge(prev: string): string {

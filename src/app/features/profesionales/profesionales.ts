@@ -4,6 +4,7 @@ import { ProfesionalService } from '../../core/services/profesional.service';
 import { Profesional, SEDES, TIPOS_PROFESIONAL, labelTipo } from '../../core/models/profesional.model';
 import { TipoProfesional } from '../../core/models/liquidacion.model';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
+import { ToastService } from '../../shared/toast/toast.service';
 
 /** Draft del formulario: el % se maneja como entero (25) y se convierte a 0.25 al guardar. */
 function vacio(): Profesional {
@@ -169,6 +170,7 @@ function vacio(): Profesional {
 export class Profesionales {
   readonly svc = inject(ProfesionalService);
   private confirm = inject(ConfirmService);
+  private toast = inject(ToastService);
   readonly tipos = TIPOS_PROFESIONAL;
   readonly sedes = SEDES;
   readonly labelTipo = labelTipo;
@@ -209,7 +211,9 @@ export class Profesionales {
         const id = slug(d.nombre) || `prof-${crypto.randomUUID().slice(0, 8)}`;
         await this.svc.crear({ ...d, id, porcentajeClinica: pct });
       }
+      const editado = !!this.editandoId();
       this.cerrar();
+      this.toast.exito(editado ? 'Profesional actualizado' : 'Profesional creado');
     } catch (e) {
       this.errorForm.set('No se pudo guardar: ' + (e as Error).message);
     } finally {
@@ -224,7 +228,7 @@ export class Profesionales {
       confirmar: 'Eliminar',
       tono: 'peligro',
     });
-    if (ok) await this.svc.eliminar(p.id);
+    if (ok) { await this.svc.eliminar(p.id); this.toast.exito('Profesional eliminado'); }
   }
 }
 

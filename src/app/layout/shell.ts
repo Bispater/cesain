@@ -3,10 +3,11 @@ import { RouterLink, RouterLinkActive, RouterOutlet, Router } from '@angular/rou
 import { AuthService } from '../core/services/auth.service';
 import { ConfirmDialog } from '../shared/confirm/confirm-dialog';
 import { Icon, IconName } from '../shared/icon/icon';
+import { Toast } from '../shared/toast/toast';
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ConfirmDialog, Icon],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ConfirmDialog, Icon, Toast],
   template: `
     <div class="min-h-screen bg-[#f4f1f8]">
       <!-- Barra superior (solo móvil) -->
@@ -76,6 +77,7 @@ import { Icon, IconName } from '../shared/icon/icon';
     </div>
 
     <app-confirm-dialog />
+    <app-toast />
   `,
 })
 export class Shell {
