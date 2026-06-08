@@ -272,13 +272,20 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
                       <span class="text-sm font-semibold text-gray-800">{{ fechaCL(h.fecha) }}</span>
                       <span class="text-xs px-2 py-0.5 rounded-full bg-brand-50 text-brand-700">{{ h.usuario }}</span>
                     </div>
-                    <p class="text-sm text-gray-600 mt-0.5">{{ h.accion }}</p>
+                    <p class="text-sm text-gray-600 mt-0.5">{{ h.accion }} · {{ h.nPrestaciones }} prestación(es)</p>
                     <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-1">
-                      <span>Bruto: <b class="text-gray-700">{{ h.totalBruto | clp }}</b></span>
-                      <span>Doctor: <b class="text-brand-700">{{ h.totalProfesional | clp }}</b></span>
-                      <span>Arriendo: <b class="text-amber-700">{{ h.totalClinica | clp }}</b></span>
-                      <span>{{ h.nPrestaciones }} prestación(es)</span>
+                      <span>Bruto: <b class="text-gray-700">{{ h.totalBrutoAntes | clp }} → {{ h.totalBruto | clp }}</b></span>
+                      <span>Doctor: <b class="text-brand-700">{{ h.totalProfesionalAntes | clp }} → {{ h.totalProfesional | clp }}</b></span>
+                      <span>Arriendo: <b class="text-amber-700">{{ h.totalClinicaAntes | clp }} → {{ h.totalClinica | clp }}</b></span>
                     </div>
+                    @if (h.cambios?.length) {
+                      <ul class="mt-2 max-h-40 overflow-y-auto rounded-lg bg-gray-50 border border-gray-100 p-2.5
+                                 text-xs text-gray-600 space-y-1">
+                        @for (c of h.cambios; track $index) {
+                          <li class="flex gap-1.5"><span class="text-brand-400 shrink-0">•</span><span>{{ c }}</span></li>
+                        }
+                      </ul>
+                    }
                   </li>
                 } @empty {
                   <li class="ml-4 text-sm text-gray-400 py-4">
@@ -601,6 +608,7 @@ export class Planilla implements PuedeSalir {
   async guardar() {
     const l = this.base();
     if (!l) return;
+    const antes = l; // estado guardado previo (para el diff del historial)
     const items: ItemLiquidacion[] = [];
     for (const f of this.filas()) {
       for (const [fecha, cant] of Object.entries(f.celdas)) {
@@ -623,7 +631,10 @@ export class Planilla implements PuedeSalir {
       this.semanasModificadas.set(new Set()); // guardado: ya no hay cambios pendientes
       this.celdasModificadas.set(new Set());
       const guardada = this.svc.buscarPorId(l.id);
-      if (guardada) void this.historial.registrar(guardada);
+      if (guardada) {
+        const cambios = resumirCambios(antes, guardada);
+        void this.historial.registrar(guardada, antes, cambios);
+      }
       this.toast.exito('Cambios guardados en la nube');
     } catch {
       this.toast.error('No se pudo guardar. Revisa tu conexión.');
@@ -687,6 +698,62 @@ export class Planilla implements PuedeSalir {
   semanaTieneData(s: Semana): boolean {
     return this.filas().some((f) => s.dias.some((d) => (f.celdas[d] || 0) > 0));
   }
+}
+
+// ───────── Diff para el historial ─────────
+/** Agrupa items por "servicio|previsión" -> { fechaISO: cantidad }. */
+function agruparItems(items: { servicio: string; prevision: string; fecha: string; cantidad: number }[]) {
+  const mapa = new Map<string, Record<string, number>>();
+  for (const it of items) {
+    const k = `${it.servicio}|${it.prevision}`;
+    const dias = mapa.get(k) ?? {};
+    dias[it.fecha] = (dias[it.fecha] ?? 0) + it.cantidad;
+    mapa.set(k, dias);
+  }
+  return mapa;
+}
+
+/** Genera líneas legibles de qué cambió entre dos liquidaciones. */
+function resumirCambios(antes: Liquidacion | undefined, despues: Liquidacion): string[] {
+  const a = agruparItems(antes?.items ?? []);
+  const d = agruparItems(despues.items);
+  const lineas: string[] = [];
+  const claves = [...new Set([...a.keys(), ...d.keys()])].sort();
+
+  for (const k of claves) {
+    const [servicio, prevision] = k.split('|');
+    const da = a.get(k);
+    const dd = d.get(k);
+
+    if (!da && dd) {
+      const total = Object.values(dd).reduce((s, n) => s + n, 0);
+      const dias = Object.keys(dd).sort().map((f) => `${ddmm(f)} (+${dd[f]})`).join(', ');
+      lineas.push(`+ Nueva prestación "${servicio}" [${prevision}]: ${total} en total — ${dias}`);
+    } else if (da && !dd) {
+      lineas.push(`− Se eliminó "${servicio}" [${prevision}]`);
+    } else if (da && dd) {
+      const fechas = [...new Set([...Object.keys(da), ...Object.keys(dd)])].sort();
+      for (const f of fechas) {
+        const va = da[f] || 0;
+        const vd = dd[f] || 0;
+        if (va !== vd) {
+          const delta = vd - va;
+          lineas.push(`"${servicio}" · ${ddmm(f)}: ${va} → ${vd} (${delta > 0 ? '+' : ''}${delta})`);
+        }
+      }
+    }
+  }
+
+  // % clínica
+  if (antes && antes.porcentajeClinica !== despues.porcentajeClinica) {
+    lineas.push(`% Clínica: ${Math.round(antes.porcentajeClinica * 100)}% → ${Math.round(despues.porcentajeClinica * 100)}%`);
+  }
+  if (!lineas.length) lineas.push('Sin cambios en las prestaciones (se volvió a guardar).');
+  return lineas;
+}
+
+function ddmm(iso: string): string {
+  return `${iso.slice(8, 10)}-${iso.slice(5, 7)}`;
 }
 
 // ───────────────────────── Helpers de semanas ─────────────────────────

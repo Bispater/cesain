@@ -12,21 +12,31 @@ export class HistorialService {
   private readonly col = 'historial';
 
   /** Registra que un usuario guardó una liquidación. No lanza si falla. */
-  async registrar(liq: Liquidacion, accion = 'Guardó la planilla', timestamp = Date.now()): Promise<void> {
+  async registrar(
+    despues: Liquidacion,
+    antes: Liquidacion | undefined,
+    cambios: string[],
+    accion = 'Guardó la planilla',
+    timestamp = Date.now(),
+  ): Promise<void> {
     try {
-      const id = `${liq.id}_${timestamp}`;
+      const id = `${despues.id}_${timestamp}`;
       const reg: RegistroHistorial = {
         id,
         fecha: new Date(timestamp).toISOString(),
         usuario: this.auth.usuario()?.email ?? '—',
-        liquidacionId: liq.id,
-        profesional: liq.profesional,
-        periodo: liq.periodo,
+        liquidacionId: despues.id,
+        profesional: despues.profesional,
+        periodo: despues.periodo,
         accion,
-        totalBruto: liq.totalBruto,
-        totalProfesional: liq.totalProfesional,
-        totalClinica: liq.totalClinica,
-        nPrestaciones: new Set(liq.items.map((i) => `${i.servicio}|${i.prevision}`)).size,
+        totalBruto: despues.totalBruto,
+        totalProfesional: despues.totalProfesional,
+        totalClinica: despues.totalClinica,
+        nPrestaciones: new Set(despues.items.map((i) => `${i.servicio}|${i.prevision}`)).size,
+        totalBrutoAntes: antes?.totalBruto ?? 0,
+        totalProfesionalAntes: antes?.totalProfesional ?? 0,
+        totalClinicaAntes: antes?.totalClinica ?? 0,
+        cambios,
       };
       await setDoc(doc(firestore(), this.col, id), reg);
     } catch {
