@@ -44,6 +44,11 @@ export class HistorialService {
     }
   }
 
+  /** Registra una acción simple (eliminar/restaurar) en la auditoría. */
+  async registrarAccion(liq: Liquidacion, accion: string, timestamp = Date.now()): Promise<void> {
+    await this.registrar(liq, liq, [accion], accion, timestamp);
+  }
+
   /** Lista el historial de una liquidación, más reciente primero. */
   async listar(liquidacionId: string): Promise<RegistroHistorial[]> {
     const q = query(collection(firestore(), this.col), where('liquidacionId', '==', liquidacionId));

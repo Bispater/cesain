@@ -166,7 +166,14 @@ import { Icon } from '../../shared/icon/icon';
             }
           } @empty {
             <tr><td colspan="8" class="px-4 py-10 text-center text-gray-400">
-              No hay liquidaciones para los filtros aplicados.
+              @if (svc.cargando()) {
+                <span class="inline-flex items-center gap-2">
+                  <span class="h-4 w-4 rounded-full border-2 border-brand-300 border-t-brand-600 animate-spin"></span>
+                  Cargando liquidaciones…
+                </span>
+              } @else {
+                No hay liquidaciones para los filtros aplicados.
+              }
             </td></tr>
           }
         </tbody>

@@ -10,6 +10,7 @@ import { RAW_EXCEL_TABS, RawExcelTab } from '../data/raw-excel.mock';
 import { Profesional } from '../models/profesional.model';
 import { LIQUIDACION_REPOSITORY } from '../repositories/liquidacion.repository';
 import { AuthService } from './auth.service';
+import { HistorialService } from './historial.service';
 
 export type EstadoCarga =
   | 'idle'
@@ -45,6 +46,7 @@ interface Normalizado {
 export class LiquidacionService {
   private readonly repo = inject(LIQUIDACION_REPOSITORY);
   private readonly auth = inject(AuthService);
+  private readonly historial = inject(HistorialService);
 
   // Normalización inicial del Excel "sucio" (semilla si la DB está vacía).
   private readonly _inicial = this.normalizar([...RAW_EXCEL_TABS]);
@@ -167,6 +169,7 @@ export class LiquidacionService {
     };
     this._liquidaciones.update((arr) => arr.map((x) => (x.id === id ? eliminada : x)));
     await this.repo.guardar(eliminada);
+    void this.historial.registrarAccion(eliminada, 'Enviada a la papelera');
   }
 
   /** Restaura una liquidación desde la papelera. */
@@ -178,10 +181,13 @@ export class LiquidacionService {
     delete restaurada.eliminadaPor;
     this._liquidaciones.update((arr) => arr.map((x) => (x.id === id ? restaurada : x)));
     await this.repo.guardar(restaurada);
+    void this.historial.registrarAccion(restaurada, 'Restaurada desde la papelera');
   }
 
   /** Elimina definitivamente (no recuperable). */
   async eliminarDefinitivo(id: string): Promise<void> {
+    const l = this.buscarPorId(id);
+    if (l) void this.historial.registrarAccion(l, 'Eliminada definitivamente');
     this._liquidaciones.update((arr) => arr.filter((x) => x.id !== id));
     await this.repo.eliminar(id);
   }
