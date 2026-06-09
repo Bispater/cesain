@@ -116,22 +116,10 @@ import { Icon } from '../../shared/icon/icon';
             @if (abierto() === l.id) {
               <tr class="bg-gray-50/60">
                 <td colspan="8" class="px-6 py-4">
-                  <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-                    <p class="text-xs text-gray-400">
-                      Origen: {{ l.archivoOrigen }} · {{ (l.porcentajeClinica * 100) }}% retención clínica
-                    </p>
-                    <div class="flex items-center gap-2">
-                      <a [routerLink]="['/planilla', l.id]" (click)="$event.stopPropagation()"
-                         class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-3 py-1.5">
-                        ▦ Abrir planilla (editar como Excel)
-                      </a>
-                      <a [routerLink]="['/comprobante', l.id]" (click)="$event.stopPropagation()"
-                         class="rounded-lg border border-gray-200 text-gray-600 text-xs px-3 py-1.5 hover:bg-gray-50">
-                        ⎙ PDF
-                      </a>
-                    </div>
-                  </div>
-                  <p class="text-[11px] text-gray-400 mb-2">Vista de detalle (solo lectura):</p>
+                  <p class="text-xs text-gray-400 mb-2">
+                    Origen: {{ l.archivoOrigen }} · {{ (l.porcentajeClinica * 100) }}% retención clínica
+                    · Vista de detalle (solo lectura)
+                  </p>
                   <table class="w-full text-xs">
                     <thead class="text-gray-500 text-left">
                       <tr>

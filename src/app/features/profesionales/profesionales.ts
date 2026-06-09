@@ -5,6 +5,7 @@ import { CatalogosService } from '../../core/services/catalogos.service';
 import { Profesional } from '../../core/models/profesional.model';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { ToastService } from '../../shared/toast/toast.service';
+import { Spinner } from '../../shared/spinner/spinner';
 
 /** Draft del formulario: el % se maneja como entero (25) y se convierte a 0.25 al guardar. */
 function vacio(): Profesional {
@@ -13,7 +14,7 @@ function vacio(): Profesional {
 
 @Component({
   selector: 'app-profesionales',
-  imports: [FormsModule],
+  imports: [FormsModule, Spinner],
   template: `
     <header class="flex flex-wrap items-center justify-between gap-3 mb-6">
       <div>
@@ -90,7 +91,8 @@ function vacio(): Profesional {
             </tr>
           } @empty {
             <tr><td colspan="7" class="px-4 py-10 text-center text-gray-400">
-              {{ svc.cargando() ? 'Cargando…' : 'No hay profesionales para este filtro.' }}
+              @if (svc.cargando()) { <app-spinner label="Cargando profesionales…" /> }
+              @else { No hay profesionales para este filtro. }
             </td></tr>
           }
         </tbody>

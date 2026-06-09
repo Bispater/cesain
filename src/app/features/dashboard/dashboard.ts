@@ -3,10 +3,11 @@ import { RouterLink } from '@angular/router';
 import { LiquidacionService } from '../../core/services/liquidacion.service';
 import { nombrePeriodo } from '../../core/models/liquidacion.model';
 import { ClpPipe } from '../../shared/pipes/clp.pipe';
+import { Spinner } from '../../shared/spinner/spinner';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [ClpPipe, RouterLink],
+  imports: [ClpPipe, RouterLink, Spinner],
   template: `
     <!-- Encabezado + filtros -->
     <header class="flex flex-wrap items-end justify-between gap-4 mb-6">
@@ -15,6 +16,7 @@ import { ClpPipe } from '../../shared/pipes/clp.pipe';
         <p class="text-sm text-gray-500">
           Resumen consolidado del centro médico · período real de los datos
         </p>
+        @if (svc.cargando()) { <div class="mt-2"><app-spinner label="Cargando datos…" /></div> }
       </div>
 
       <div class="flex flex-wrap items-center gap-3">

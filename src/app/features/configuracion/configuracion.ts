@@ -3,9 +3,11 @@ import { CatalogosService, ItemCatalogo } from '../../core/services/catalogos.se
 import { ProfesionalService } from '../../core/services/profesional.service';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { ToastService } from '../../shared/toast/toast.service';
+import { Spinner } from '../../shared/spinner/spinner';
 
 @Component({
   selector: 'app-configuracion',
+  imports: [Spinner],
   template: `
     <header class="mb-6">
       <h1 class="text-2xl font-bold text-gray-800">Configuración</h1>
@@ -38,7 +40,7 @@ import { ToastService } from '../../shared/toast/toast.service';
               <button (click)="eliminar('tipo', t)" class="text-xs text-red-500 hover:underline">Eliminar</button>
             </li>
           } @empty {
-            <li class="py-3 text-sm text-gray-400">{{ cat.cargando() ? 'Cargando…' : 'Sin tipos.' }}</li>
+            <li class="py-3">@if (cat.cargando()) { <app-spinner /> } @else { <span class="text-sm text-gray-400">Sin tipos.</span> }</li>
           }
         </ul>
       </section>
@@ -66,7 +68,7 @@ import { ToastService } from '../../shared/toast/toast.service';
               <button (click)="eliminar('sede', s)" class="text-xs text-red-500 hover:underline">Eliminar</button>
             </li>
           } @empty {
-            <li class="py-3 text-sm text-gray-400">{{ cat.cargando() ? 'Cargando…' : 'Sin sedes.' }}</li>
+            <li class="py-3">@if (cat.cargando()) { <app-spinner /> } @else { <span class="text-sm text-gray-400">Sin sedes.</span> }</li>
           }
         </ul>
       </section>

@@ -249,7 +249,11 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
       </div>
 
       <!-- Totales finales (mes) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5 max-w-xl">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5 max-w-3xl">
+        <div class="rounded-2xl bg-brand-600 p-5 shadow-sm flex justify-between items-center text-white">
+          <span class="font-semibold">TOTAL MES <span class="text-xs text-brand-200">(bruto)</span></span>
+          <span class="text-xl font-extrabold">{{ calculo().totalBrutoMes | clp }}</span>
+        </div>
         <div class="rounded-2xl bg-white p-5 shadow-sm border border-gray-100 flex justify-between items-center">
           <span class="font-semibold text-gray-700">TOTAL DOCTOR <span class="text-xs text-gray-400">(mes)</span></span>
           <span class="text-xl font-extrabold text-brand-700">{{ calculo().totalProfesionalMes | clp }}</span>

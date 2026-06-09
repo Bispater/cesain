@@ -6,6 +6,7 @@ import { Prevision } from '../../core/models/liquidacion.model';
 import { ClpPipe } from '../../shared/pipes/clp.pipe';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { ToastService } from '../../shared/toast/toast.service';
+import { Spinner } from '../../shared/spinner/spinner';
 
 const PREVISIONES: Prevision[] = ['FONASA', 'ISAPRE', 'PARTICULAR'];
 
@@ -15,7 +16,7 @@ function vacia(): Prestacion {
 
 @Component({
   selector: 'app-prestaciones',
-  imports: [FormsModule, ClpPipe],
+  imports: [FormsModule, ClpPipe, Spinner],
   template: `
     <header class="flex flex-wrap items-center justify-between gap-3 mb-6">
       <div>
@@ -98,7 +99,8 @@ function vacia(): Prestacion {
             </tr>
           } @empty {
             <tr><td colspan="7" class="px-4 py-10 text-center text-gray-400">
-              {{ svc.cargando() ? 'Cargando…' : 'No hay prestaciones para este filtro.' }}
+              @if (svc.cargando()) { <app-spinner label="Cargando prestaciones…" /> }
+              @else { No hay prestaciones para este filtro. }
             </td></tr>
           }
         </tbody>
