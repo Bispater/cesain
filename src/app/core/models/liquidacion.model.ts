@@ -33,6 +33,8 @@ export interface ItemLiquidacion {
   montoBruto: number;
   /** Copago: parte que paga el paciente de su bolsillo (relevante en exámenes). */
   copago: number;
+  /** % clínica específico de esta prestación (decimal). Si falta, usa el de la liquidación. */
+  porcentajeClinica?: number;
 }
 
 /**

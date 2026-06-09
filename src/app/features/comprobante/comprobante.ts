@@ -65,7 +65,7 @@ interface FilaPivot {
               }
               <th class="border border-gray-400 px-2 py-1 text-center">TOTAL</th>
               <th class="border border-gray-400 px-2 py-1 text-right">TOTAL $</th>
-              <th class="border border-gray-400 px-2 py-1 text-right">{{ l.porcentajeClinica * 100 }}%</th>
+              <th class="border border-gray-400 px-2 py-1 text-right">Arriendo</th>
             </tr>
           </thead>
           <tbody>
@@ -154,7 +154,7 @@ export class Comprobante {
       row.porFecha[it.fecha] = (row.porFecha[it.fecha] ?? 0) + it.cantidad;
       row.totalCantidad += it.cantidad;
       row.totalMonto += it.montoBruto;
-      row.montoClinica = Math.round(row.totalMonto * l.porcentajeClinica);
+      row.montoClinica = Math.round(row.totalMonto * (it.porcentajeClinica ?? l.porcentajeClinica));
       mapa.set(key, row);
     }
     return [...mapa.values()];

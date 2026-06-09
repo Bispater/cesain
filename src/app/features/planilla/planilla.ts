@@ -18,6 +18,8 @@ interface FilaPlanilla {
   prevision: Prevision;
   valorUnitario: number;
   copagoUnit: number;
+  /** % clínica de esta prestación (entero, ej. 25). */
+  porcentaje: number;
   celdas: Record<string, number>; // fecha ISO -> cantidad
 }
 
@@ -130,6 +132,7 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
               <th class="px-3 py-2.5 text-left sticky left-0 bg-brand-600 z-10 min-w-[14rem]">Prestación</th>
               <th class="px-3 py-2.5 text-left">Previsión</th>
               <th class="px-3 py-2.5 text-right">Valor</th>
+              <th class="px-2 py-2.5 text-center w-20">% Clín.</th>
               @for (c of columnasSemana(); track c) {
                 <th class="w-14 px-2 py-2 text-center whitespace-nowrap"
                     [class.text-brand-300]="!enMes(c)">
@@ -141,7 +144,7 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
               }
               <th class="px-3 py-2.5 text-center bg-brand-700">Total mes</th>
               <th class="px-3 py-2.5 text-right">Total $ mes</th>
-              <th class="px-3 py-2.5 text-right">{{ porcentaje() }}% mes</th>
+              <th class="px-3 py-2.5 text-right">Arriendo mes</th>
               <th class="px-2 py-2.5 text-center w-14">Acción</th>
             </tr>
           </thead>
@@ -171,6 +174,16 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
                          [class.bg-transparent]="!celdaModificada(i + '|valor')"
                          class="w-24 px-2 py-1.5 text-right tabular-nums rounded-md outline-none
                                 focus:bg-white focus:ring-2 focus:ring-brand-200" />
+                </td>
+                <td class="px-1.5 py-1 text-center">
+                  <span class="inline-flex items-center rounded-md"
+                        [class.bg-green-100]="celdaModificada(i + '|porc')">
+                    <input type="number" inputmode="numeric" min="0" max="100" [value]="f.porcentaje"
+                           (input)="setPorcentajeFila(i, $any($event.target).value)"
+                           class="w-12 px-1 py-1.5 text-right tabular-nums bg-transparent rounded-md outline-none
+                                  focus:bg-white focus:ring-2 focus:ring-brand-200" />
+                    <span class="text-xs text-gray-400 pr-1">%</span>
+                  </span>
                 </td>
                 @for (c of columnasSemana(); track c) {
                   <td class="w-14 px-1 py-1 text-center" [class.bg-gray-200]="!enMes(c)">
@@ -210,6 +223,7 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
               <td class="!border-brand-200 px-3 py-2.5 sticky left-0 bg-brand-100 z-10">TOTAL</td>
               <td class="!border-brand-200"></td>
               <td class="!border-brand-200 text-right pr-3 text-[10px] font-medium text-brand-500">semana →</td>
+              <td class="!border-brand-200"></td>
               @for (c of columnasSemana(); track c) {
                 <td class="!border-brand-200 px-2 py-2.5 text-center tabular-nums">{{ calculo().totalColSemana[c] || '' }}</td>
               }
@@ -470,6 +484,7 @@ export class Planilla implements PuedeSalir {
           prevision: it.prevision,
           valorUnitario: it.valorUnitario,
           copagoUnit: it.cantidad ? Math.round(it.copago / it.cantidad) : 0,
+          porcentaje: Math.round((it.porcentajeClinica ?? l.porcentajeClinica) * 100),
           celdas: {},
         };
       fila.celdas[it.fecha] = (fila.celdas[it.fecha] ?? 0) + it.cantidad;
@@ -489,11 +504,10 @@ export class Planilla implements PuedeSalir {
   // ───────── Cálculo (totales del MES; columnas de la semana visible) ─────────
   readonly calculo = computed(() => {
     const cols = this.columnasSemana();
-    const pct = this.porcentaje() / 100;
     const filasCalc = this.filas().map((f) => {
       const cantidadMes = Object.values(f.celdas).reduce((s, n) => s + (n || 0), 0);
       const montoMes = cantidadMes * f.valorUnitario;
-      const clinicaMes = Math.round(montoMes * pct);
+      const clinicaMes = Math.round(montoMes * (f.porcentaje / 100));
       return { ...f, cantidadMes, montoMes, clinicaMes };
     });
     const totalColSemana: Record<string, number> = {};
@@ -547,9 +561,19 @@ export class Planilla implements PuedeSalir {
     this.marcarCelda(i + '|' + campo);
     this.bump();
   }
+  /** % global: lo aplica a TODAS las filas (default de la tabla). */
   setPorcentaje(val: string) {
-    this.porcentaje.set(Math.min(100, Math.max(0, +val || 0)));
+    const p = Math.min(100, Math.max(0, +val || 0));
+    this.porcentaje.set(p);
+    this.filas.update((fs) => fs.map((f) => ({ ...f, porcentaje: p })));
     this.marcarCambio();
+  }
+
+  /** % de una prestación puntual. */
+  setPorcentajeFila(i: number, val: string) {
+    this.filas()[i].porcentaje = Math.min(100, Math.max(0, +val || 0));
+    this.marcarCelda(i + '|porc');
+    this.bump();
   }
 
   cambiarMes(id: string) {
@@ -563,7 +587,7 @@ export class Planilla implements PuedeSalir {
   agregarFilaDesde(p: Prestacion) {
     this.filas.update((fs) => [
       ...fs,
-      { servicio: p.nombre, prevision: p.prevision, valorUnitario: p.valorBono, copagoUnit: p.valorCopago, celdas: {} },
+      { servicio: p.nombre, prevision: p.prevision, valorUnitario: p.valorBono, copagoUnit: p.valorCopago, porcentaje: this.porcentaje(), celdas: {} },
     ]);
     this.marcarCambio();
     this.cerrarPicker();
@@ -578,7 +602,7 @@ export class Planilla implements PuedeSalir {
 
     this.filas.update((fs) => [
       ...fs,
-      { servicio: nombre, prevision, valorUnitario: valor, copagoUnit: copago, celdas: {} },
+      { servicio: nombre, prevision, valorUnitario: valor, copagoUnit: copago, porcentaje: this.porcentaje(), celdas: {} },
     ]);
 
     if (this.guardarEnCatalogo()) {
@@ -622,6 +646,7 @@ export class Planilla implements PuedeSalir {
           valorUnitario: f.valorUnitario,
           montoBruto: f.valorUnitario * cant,
           copago: f.copagoUnit * cant,
+          porcentajeClinica: f.porcentaje / 100,
         });
       }
     }

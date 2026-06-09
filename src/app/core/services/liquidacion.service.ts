@@ -404,7 +404,11 @@ export function recalcularTotales(liq: Liquidacion): Liquidacion {
     montoBruto: it.valorUnitario * it.cantidad,
   }));
   const totalBruto = sum(items, (i) => i.montoBruto);
-  const totalClinica = Math.round(totalBruto * liq.porcentajeClinica);
+  // El arriendo se calcula por prestación (cada una puede tener su %).
+  const totalClinica = items.reduce(
+    (acc, i) => acc + Math.round(i.montoBruto * (i.porcentajeClinica ?? liq.porcentajeClinica)),
+    0,
+  );
   return {
     ...liq,
     items,
