@@ -7,12 +7,22 @@ export interface Profesional {
   rut: string;
   especialidad: string;
   tipoProfesional: TipoProfesional;
-  sede: string;
+  /** Sedes donde atiende. Un profesional puede trabajar en más de una. */
+  sedes: string[];
+  /** Campo legado de documentos antiguos (una sola sede); usar `sedes`. */
+  sede?: string;
   /** % que retiene la clínica por arriendo de espacio (0.25 = 25%). */
   porcentajeClinica: number;
   email: string;
   telefono: string;
   activo: boolean;
+}
+
+/** Migra documentos antiguos que traían `sede` (string) al arreglo `sedes`. */
+export function normalizarProfesional(p: Profesional): Profesional {
+  const sedes = p.sedes?.length ? p.sedes : p.sede ? [p.sede] : [];
+  const { sede: _legado, ...resto } = p;
+  return { ...resto, sedes };
 }
 
 export const TIPOS_PROFESIONAL: { valor: TipoProfesional; label: string }[] = [

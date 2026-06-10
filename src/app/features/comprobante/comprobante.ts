@@ -50,7 +50,7 @@ interface FilaPivot {
           </div>
           <div class="text-right">
             <p class="font-bold text-gray-700">LIQUIDACIÓN {{ nombrePeriodo(l.periodo) | uppercase }}</p>
-            <p class="text-xs text-gray-500">{{ l.especialidad }} · {{ l.sede }}</p>
+            <p class="text-xs text-gray-500">{{ l.especialidad ? l.especialidad + ' · ' : '' }}{{ l.sede }}</p>
             <p class="text-xs text-gray-400">Retención clínica: {{ l.porcentajeClinica * 100 }}%</p>
           </div>
         </div>

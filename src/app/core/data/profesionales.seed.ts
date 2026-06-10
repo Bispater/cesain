@@ -18,5 +18,5 @@ function prof(
   sede: string,
   porcentajeClinica: number,
 ): Profesional {
-  return { id, nombre, rut: '', especialidad, tipoProfesional, sede, porcentajeClinica, email: '', telefono: '', activo: true };
+  return { id, nombre, rut: '', especialidad, tipoProfesional, sedes: [sede], porcentajeClinica, email: '', telefono: '', activo: true };
 }

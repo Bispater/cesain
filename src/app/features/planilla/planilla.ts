@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { PuedeSalir } from '../../core/guards/unsaved.guard';
 import { LiquidacionService, nuevoItemId } from '../../core/services/liquidacion.service';
 import { PrestacionService } from '../../core/services/prestacion.service';
+import { ProfesionalService } from '../../core/services/profesional.service';
 import { ItemLiquidacion, Liquidacion, Prevision, nombrePeriodo } from '../../core/models/liquidacion.model';
 import { CATEGORIAS, Prestacion } from '../../core/models/prestacion.model';
 import { ClpPipe } from '../../shared/pipes/clp.pipe';
@@ -50,11 +51,15 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
         </a>
         <h1 class="text-2xl font-bold text-gray-800 leading-tight">{{ l.profesional }}</h1>
         <div class="flex items-center gap-2 mt-1 text-sm text-gray-500">
-          <span>{{ l.especialidad }}</span>
-          <span class="text-gray-300">·</span>
+          @if (l.especialidad) {
+            <span>{{ l.especialidad }}</span>
+            <span class="text-gray-300">·</span>
+          }
           <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 text-xs font-medium">
             {{ l.sede }}
           </span>
+          <span class="text-gray-300">·</span>
+          <span>{{ nombrePeriodo(l.periodo) }}</span>
         </div>
       </header>
 
@@ -71,6 +76,19 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
             }
           </select>
         </label>
+
+        @if (sedesDoctor().length > 1) {
+          <label class="flex items-center gap-2 text-sm">
+            <span class="text-gray-500">Sede</span>
+            <select [value]="l.sede" (change)="cambiarSede($any($event.target).value)"
+                    class="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700
+                           focus:border-brand-400 focus:ring-2 focus:ring-brand-200 outline-none">
+              @for (s of sedesDoctor(); track s) {
+                <option [value]="s">{{ s }}</option>
+              }
+            </select>
+          </label>
+        }
 
         <div class="h-6 w-px bg-gray-200 hidden sm:block"></div>
 
@@ -250,17 +268,17 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
 
       <!-- Totales finales (mes) -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5 max-w-3xl">
-        <div class="rounded-2xl bg-brand-600 p-5 shadow-sm flex justify-between items-center text-white">
-          <span class="font-semibold">TOTAL MES <span class="text-xs text-brand-200">(bruto)</span></span>
-          <span class="text-xl font-extrabold">{{ calculo().totalBrutoMes | clp }}</span>
+        <div class="rounded-2xl bg-brand-600 p-5 shadow-sm text-white">
+          <p class="text-xs font-semibold uppercase tracking-wide text-brand-200 whitespace-nowrap">Total mes (bruto)</p>
+          <p class="text-2xl font-extrabold mt-1 tabular-nums">{{ calculo().totalBrutoMes | clp }}</p>
         </div>
-        <div class="rounded-2xl bg-white p-5 shadow-sm border border-gray-100 flex justify-between items-center">
-          <span class="font-semibold text-gray-700">TOTAL DOCTOR <span class="text-xs text-gray-400">(mes)</span></span>
-          <span class="text-xl font-extrabold text-brand-700">{{ calculo().totalProfesionalMes | clp }}</span>
+        <div class="rounded-2xl bg-white p-5 shadow-sm border border-gray-100">
+          <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 whitespace-nowrap">Total doctor (mes)</p>
+          <p class="text-2xl font-extrabold mt-1 tabular-nums text-brand-700">{{ calculo().totalProfesionalMes | clp }}</p>
         </div>
-        <div class="rounded-2xl bg-amber-50 p-5 shadow-sm border border-amber-100 flex justify-between items-center">
-          <span class="font-semibold text-amber-700">TOTAL ARRIENDO <span class="text-xs text-amber-500">(mes)</span></span>
-          <span class="text-xl font-extrabold text-amber-700">{{ calculo().totalClinicaMes | clp }}</span>
+        <div class="rounded-2xl bg-amber-50 p-5 shadow-sm border border-amber-100">
+          <p class="text-xs font-semibold uppercase tracking-wide text-amber-600 whitespace-nowrap">Total arriendo (mes)</p>
+          <p class="text-2xl font-extrabold mt-1 tabular-nums text-amber-700">{{ calculo().totalClinicaMes | clp }}</p>
         </div>
       </div>
 
@@ -396,6 +414,7 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
 export class Planilla implements PuedeSalir {
   private svc = inject(LiquidacionService);
   private prestacionSvc = inject(PrestacionService);
+  private profSvc = inject(ProfesionalService);
   private confirm = inject(ConfirmService);
   private toast = inject(ToastService);
   private historial = inject(HistorialService);
@@ -429,15 +448,33 @@ export class Planilla implements PuedeSalir {
   readonly semanaSel = signal(0);
   readonly columnasSemana = computed(() => this.semanas()[this.semanaSel()]?.dias ?? []);
 
-  // Meses disponibles para este profesional (para el selector de mes)
+  // Meses disponibles para este profesional EN ESTA SEDE (para el selector de mes)
   readonly mesesDoctor = computed(() => {
     const l = this.base();
     if (!l) return [];
     return this.svc
-      .liquidaciones()
-      .filter((x) => x.profesional === l.profesional)
+      .activas()
+      .filter((x) => x.profesional === l.profesional && x.sede === l.sede)
       .map((x) => ({ id: x.id, periodo: x.periodo }))
-      .sort((a, b) => b.periodo.localeCompare(a.periodo));
+      .sort((a, b) => b.periodo.localeCompare(a.periodo))
+      // La actual siempre debe estar (aunque esté en papelera, no debería pasar).
+      .concat(this.svc.activas().some((x) => x.id === l.id) ? [] : [{ id: l.id, periodo: l.periodo }]);
+  });
+
+  /** Profesional del catálogo asociado a esta liquidación. */
+  readonly profesionalCat = computed(() => {
+    const l = this.base();
+    if (!l) return undefined;
+    const items = this.profSvc.items();
+    return items.find((p) => p.id === l.profesionalId) ?? items.find((p) => p.nombre === l.profesional);
+  });
+
+  /** Sedes entre las que se puede navegar: las del profesional + la de esta planilla. */
+  readonly sedesDoctor = computed(() => {
+    const l = this.base();
+    if (!l) return [];
+    const sedes = this.profesionalCat()?.sedes ?? [];
+    return sedes.includes(l.sede) ? sedes : [l.sede, ...sedes];
   });
 
   // Historial de cambios
@@ -582,6 +619,41 @@ export class Planilla implements PuedeSalir {
 
   cambiarMes(id: string) {
     if (id !== this.id()) this.router.navigate(['/planilla', id]);
+  }
+
+  /**
+   * Cambia a la planilla del mismo mes en otra sede.
+   * Si aún no existe, la crea vacía (misma estructura, distinto lugar).
+   */
+  cambiarSede(sede: string) {
+    const l = this.base();
+    if (!l || sede === l.sede) return;
+
+    const existente = this.svc.activas().find(
+      (x) =>
+        x.periodo === l.periodo &&
+        x.sede === sede &&
+        (l.profesionalId ? x.profesionalId === l.profesionalId : x.profesional === l.profesional),
+    );
+    if (existente) {
+      this.router.navigate(['/planilla', existente.id]);
+      return;
+    }
+
+    const prof = this.profesionalCat();
+    const nueva = this.svc.crearLiquidacion(
+      {
+        id: prof?.id ?? l.profesionalId ?? l.id,
+        nombre: l.profesional,
+        especialidad: l.especialidad,
+        tipoProfesional: l.tipoProfesional,
+        porcentajeClinica: prof?.porcentajeClinica ?? l.porcentajeClinica,
+      },
+      l.periodo,
+      sede,
+    );
+    this.toast.exito(`Planilla de ${sede} creada para ${nombrePeriodo(l.periodo)}`);
+    this.router.navigate(['/planilla', nueva.id]);
   }
 
   // ───────── Picker ─────────

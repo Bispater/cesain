@@ -82,10 +82,6 @@ export class LiquidacionService {
     }
   }
 
-  /** Filtros de la UI. */
-  readonly filtroProfesional = signal<string>('TODOS');
-  readonly filtroPeriodo = signal<string>('TODOS');
-
   /** Estado del flujo simulado de "Subir y Procesar archivo". */
   readonly estadoCarga = signal<EstadoCarga>('idle');
   readonly logCarga = signal<PasoCarga[]>([]);
@@ -99,18 +95,16 @@ export class LiquidacionService {
     [...new Set(this.activas().map((l) => l.periodo))].sort().reverse(),
   );
 
-  readonly liquidacionesFiltradas = computed(() => {
-    const prof = this.filtroProfesional();
-    const per = this.filtroPeriodo();
+  /** Activas filtradas por profesional y período ('TODOS' = sin filtro). */
+  filtrar(prof: string, per: string): Liquidacion[] {
     return this.activas().filter(
       (l) =>
         (prof === 'TODOS' || l.profesional === prof) &&
         (per === 'TODOS' || l.periodo === per),
     );
-  });
+  }
 
-  readonly resumen = computed(() => {
-    const data = this.liquidacionesFiltradas();
+  resumenDe(data: Liquidacion[]) {
     return {
       totalBruto: sum(data, (l) => l.totalBruto),
       totalClinica: sum(data, (l) => l.totalClinica),
@@ -119,11 +113,11 @@ export class LiquidacionService {
       nProfesionales: new Set(data.map((l) => l.profesional)).size,
       nLiquidaciones: data.length,
     };
-  });
+  }
 
-  readonly ingresosPorEspecialidad = computed(() => {
+  ingresosPorEspecialidadDe(data: Liquidacion[]) {
     const mapa = new Map<string, { valor: number; pacientes: number }>();
-    for (const l of this.liquidacionesFiltradas()) {
+    for (const l of data) {
       const acc = mapa.get(l.especialidad) ?? { valor: 0, pacientes: 0 };
       acc.valor += l.totalBruto;
       acc.pacientes += l.totalPacientes;
@@ -134,17 +128,17 @@ export class LiquidacionService {
     return filas
       .sort((a, b) => b.valor - a.valor)
       .map((f) => ({ ...f, porcentaje: Math.round((f.valor / max) * 100) }));
-  });
+  }
 
-  readonly ingresosPorPrevision = computed(() => {
+  ingresosPorPrevisionDe(data: Liquidacion[]) {
     const mapa = new Map<Prevision, number>();
-    for (const l of this.liquidacionesFiltradas()) {
+    for (const l of data) {
       for (const it of l.items) {
         mapa.set(it.prevision, (mapa.get(it.prevision) ?? 0) + it.montoBruto);
       }
     }
     return [...mapa.entries()].map(([prevision, valor]) => ({ prevision, valor }));
-  });
+  }
 
   // ───────────────────────── Lookups ─────────────────────────
   buscarPorId(id: string): Liquidacion | undefined {
@@ -193,24 +187,27 @@ export class LiquidacionService {
   }
 
   // ───────────────────────── Acciones ─────────────────────────
-  setFiltroProfesional(v: string) { this.filtroProfesional.set(v); }
-  setFiltroPeriodo(v: string) { this.filtroPeriodo.set(v); }
-
   /**
-   * Crea una liquidación vacía para un profesional y un período (mes).
-   * Si ya existe esa combinación, devuelve la existente. Persiste en la DB.
+   * Crea una liquidación vacía para un profesional, un período (mes) y una sede.
+   * La combinación profesional+período+sede es única: el mismo profesional puede
+   * tener liquidaciones separadas en Quintero y Puchuncaví el mismo mes.
+   * Si ya existe esa combinación (activa), devuelve la existente. Persiste en la DB.
    */
   crearLiquidacion(prof: {
     id: string;
     nombre: string;
     especialidad: string;
     tipoProfesional: Liquidacion['tipoProfesional'];
-    sede: string;
     porcentajeClinica: number;
-  }, periodo: string): Liquidacion {
-    const id = `${prof.id}_${periodo}`;
-    const existente = this.buscarPorId(id);
+  }, periodo: string, sede: string): Liquidacion {
+    const existente = this.activas().find(
+      (l) => l.profesionalId === prof.id && l.periodo === periodo && l.sede === sede,
+    );
     if (existente) return existente;
+
+    // Id único; el sufijo numérico evita chocar con una liquidación en papelera.
+    let id = `${prof.id}_${periodo}_${slug(sede)}`;
+    for (let n = 2; this.buscarPorId(id); n++) id = `${prof.id}_${periodo}_${slug(sede)}_${n}`;
 
     const nueva: Liquidacion = {
       id,
@@ -218,7 +215,7 @@ export class LiquidacionService {
       profesionalId: prof.id,
       especialidad: prof.especialidad,
       tipoProfesional: prof.tipoProfesional,
-      sede: prof.sede,
+      sede,
       periodo,
       archivoOrigen: 'Ingreso manual',
       porcentajeClinica: prof.porcentajeClinica,
@@ -242,6 +239,7 @@ export class LiquidacionService {
     if (!profs.length || !this._liquidaciones().length) return;
     let cambio = false;
     const actualizadas = this._liquidaciones().map((l) => {
+      if (l.eliminada) return l; // lo que está en papelera no se re-asocia
       let prof = l.profesionalId ? profs.find((p) => p.id === l.profesionalId) : undefined;
       if (!prof) prof = emparejarProfesional(l.profesional, profs);
       if (prof && (l.profesionalId !== prof.id || l.profesional !== prof.nombre)) {

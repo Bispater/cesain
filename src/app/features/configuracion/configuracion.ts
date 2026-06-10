@@ -103,7 +103,7 @@ export class Configuracion {
   async eliminar(que: 'tipo' | 'sede', item: ItemCatalogo) {
     // No permitir eliminar si está ligado a profesionales existentes.
     const enUso = this.profSvc.items().filter((p) =>
-      que === 'tipo' ? p.tipoProfesional === item.id : p.sede === item.nombre,
+      que === 'tipo' ? p.tipoProfesional === item.id : p.sedes.includes(item.nombre),
     ).length;
     if (enUso > 0) {
       this.toast.error(

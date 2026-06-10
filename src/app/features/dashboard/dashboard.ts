@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LiquidacionService } from '../../core/services/liquidacion.service';
 import { nombrePeriodo } from '../../core/models/liquidacion.model';
@@ -20,8 +20,8 @@ import { Spinner } from '../../shared/spinner/spinner';
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
-        <select [value]="svc.filtroProfesional()"
-                (change)="svc.setFiltroProfesional($any($event.target).value)"
+        <select [value]="filtroProfesional()"
+                (change)="filtroProfesional.set($any($event.target).value)"
                 class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700
                        focus:border-brand-400 focus:ring-2 focus:ring-brand-200 outline-none">
           <option value="TODOS">Todos los profesionales</option>
@@ -30,8 +30,8 @@ import { Spinner } from '../../shared/spinner/spinner';
           }
         </select>
 
-        <select [value]="svc.filtroPeriodo()"
-                (change)="svc.setFiltroPeriodo($any($event.target).value)"
+        <select [value]="filtroPeriodo()"
+                (change)="filtroPeriodo.set($any($event.target).value)"
                 class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700
                        focus:border-brand-400 focus:ring-2 focus:ring-brand-200 outline-none">
           <option value="TODOS">Todos los períodos</option>
@@ -53,16 +53,16 @@ import { Spinner } from '../../shared/spinner/spinner';
       <div class="md:col-span-2 md:row-span-2 rounded-2xl p-6 text-white
                   bg-gradient-to-br from-brand-600 to-brand-800 shadow-lg flex flex-col">
         <p class="text-brand-200 text-sm">Total facturado (bruto)</p>
-        <p class="text-4xl font-extrabold mt-1">{{ svc.resumen().totalBruto | clp }}</p>
+        <p class="text-4xl font-extrabold mt-1">{{ resumen().totalBruto | clp }}</p>
 
         <div class="grid grid-cols-2 gap-3 mt-6">
           <div class="rounded-xl bg-white/10 p-4">
             <p class="text-xs text-brand-200">Pagan los profesionales</p>
-            <p class="text-xl font-bold mt-1">{{ svc.resumen().totalProfesional | clp }}</p>
+            <p class="text-xl font-bold mt-1">{{ resumen().totalProfesional | clp }}</p>
           </div>
           <div class="rounded-xl bg-amber-200 p-4 text-amber-900">
             <p class="text-xs font-medium">Retiene la clínica (arriendo)</p>
-            <p class="text-xl font-bold mt-1">{{ svc.resumen().totalClinica | clp }}</p>
+            <p class="text-xl font-bold mt-1">{{ resumen().totalClinica | clp }}</p>
           </div>
         </div>
 
@@ -82,7 +82,7 @@ import { Spinner } from '../../shared/spinner/spinner';
       <div class="rounded-2xl bg-white p-5 shadow-sm border border-gray-100">
         <p class="text-sm text-gray-500">Pacientes / prestaciones</p>
         <p class="text-3xl font-extrabold text-gray-800 mt-1">
-          {{ svc.resumen().totalPacientes }}
+          {{ resumen().totalPacientes }}
         </p>
         <p class="text-xs text-gray-400 mt-2">en el período filtrado</p>
       </div>
@@ -91,16 +91,16 @@ import { Spinner } from '../../shared/spinner/spinner';
       <div class="rounded-2xl bg-white p-5 shadow-sm border border-gray-100">
         <p class="text-sm text-gray-500">Profesionales activos</p>
         <p class="text-3xl font-extrabold text-gray-800 mt-1">
-          {{ svc.resumen().nProfesionales }}
+          {{ resumen().nProfesionales }}
         </p>
-        <p class="text-xs text-gray-400 mt-2">{{ svc.resumen().nLiquidaciones }} liquidaciones</p>
+        <p class="text-xs text-gray-400 mt-2">{{ resumen().nLiquidaciones }} liquidaciones</p>
       </div>
 
       <!-- Distribución por previsión -->
       <div class="md:col-span-2 rounded-2xl bg-white p-5 shadow-sm border border-gray-100">
         <p class="text-sm font-semibold text-gray-700 mb-3">Ingresos por previsión</p>
         <div class="space-y-2.5">
-          @for (p of svc.ingresosPorPrevision(); track p.prevision) {
+          @for (p of ingresosPorPrevision(); track p.prevision) {
             <div>
               <div class="flex justify-between text-xs text-gray-500 mb-1">
                 <span class="font-medium text-gray-700">{{ p.prevision }}</span>
@@ -126,7 +126,7 @@ import { Spinner } from '../../shared/spinner/spinner';
         </div>
 
         <div class="flex items-end gap-6 h-56">
-          @for (e of svc.ingresosPorEspecialidad(); track e.especialidad) {
+          @for (e of ingresosPorEspecialidad(); track e.especialidad) {
             <div class="flex-1 flex flex-col items-center justify-end h-full group">
               <span class="text-xs font-semibold text-gray-700 mb-2">{{ e.valor | clp }}</span>
               <div class="w-full rounded-t-lg bg-gradient-to-t from-brand-600 to-brand-400
@@ -152,14 +152,14 @@ import { Spinner } from '../../shared/spinner/spinner';
           </a>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          @for (l of svc.liquidacionesFiltradas(); track l.id) {
+          @for (l of filtradas(); track l.id) {
             <a [routerLink]="['/planilla', l.id]"
                class="rounded-2xl bg-white p-5 shadow-sm border border-gray-100
                       hover:shadow-md hover:border-brand-200 transition-all block">
               <div class="flex items-start justify-between">
                 <div>
                   <p class="font-semibold text-gray-800 leading-tight">{{ l.profesional }}</p>
-                  <p class="text-xs text-gray-500">{{ l.especialidad }} · {{ l.sede }}</p>
+                  <p class="text-xs text-gray-500">{{ l.especialidad ? l.especialidad + ' · ' : '' }}{{ l.sede }}</p>
                 </div>
                 <span class="text-[10px] font-medium px-2 py-0.5 rounded-full
                              bg-brand-50 text-brand-700">
@@ -199,14 +199,29 @@ export class Dashboard {
   readonly svc = inject(LiquidacionService);
   readonly nombrePeriodo = nombrePeriodo;
 
+  /** Filtros propios de esta página (independientes de las demás). */
+  readonly filtroProfesional = signal('TODOS');
+  readonly filtroPeriodo = signal('TODOS');
+
+  readonly filtradas = computed(() =>
+    this.svc.filtrar(this.filtroProfesional(), this.filtroPeriodo()),
+  );
+  readonly resumen = computed(() => this.svc.resumenDe(this.filtradas()));
+  readonly ingresosPorEspecialidad = computed(() =>
+    this.svc.ingresosPorEspecialidadDe(this.filtradas()),
+  );
+  readonly ingresosPorPrevision = computed(() =>
+    this.svc.ingresosPorPrevisionDe(this.filtradas()),
+  );
+
   /** % promedio de clínica sobre el total filtrado (para la barra grande). */
   readonly porcClinica = computed(() => {
-    const r = this.svc.resumen();
+    const r = this.resumen();
     return r.totalBruto > 0 ? Math.round((r.totalClinica / r.totalBruto) * 100) : 0;
   });
 
   private readonly maxPrevision = computed(() =>
-    Math.max(1, ...this.svc.ingresosPorPrevision().map((p) => p.valor)),
+    Math.max(1, ...this.ingresosPorPrevision().map((p) => p.valor)),
   );
 
   anchoPrevision(valor: number): number {

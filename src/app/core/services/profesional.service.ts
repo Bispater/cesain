@@ -1,6 +1,6 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { TipoProfesional } from '../models/liquidacion.model';
-import { Profesional } from '../models/profesional.model';
+import { normalizarProfesional, Profesional } from '../models/profesional.model';
 import { PROFESIONAL_REPOSITORY } from '../repositories/profesional.repository';
 import { LiquidacionService } from './liquidacion.service';
 
@@ -19,7 +19,7 @@ export class ProfesionalService {
   readonly busqueda = signal('');
 
   readonly sedes = computed(() =>
-    [...new Set(this._items().map((p) => p.sede))].sort(),
+    [...new Set(this._items().flatMap((p) => p.sedes))].sort(),
   );
 
   readonly filtradas = computed(() => {
@@ -27,7 +27,7 @@ export class ProfesionalService {
     const tipo = this.filtroTipo();
     const q = this.busqueda().toLowerCase().trim();
     return this._items()
-      .filter((p) => sede === 'TODAS' || p.sede === sede)
+      .filter((p) => sede === 'TODAS' || p.sedes.includes(sede))
       .filter((p) => tipo === 'TODOS' || p.tipoProfesional === tipo)
       .filter((p) => !q || p.nombre.toLowerCase().includes(q) || p.especialidad.toLowerCase().includes(q))
       .sort((a, b) => a.nombre.localeCompare(b.nombre));
@@ -48,7 +48,7 @@ export class ProfesionalService {
     this.cargando.set(true);
     this.error.set(null);
     try {
-      this._items.set(await this.repo.listar());
+      this._items.set((await this.repo.listar()).map(normalizarProfesional));
     } catch (e) {
       this.error.set('No se pudo cargar profesionales: ' + (e as Error).message);
     } finally {
