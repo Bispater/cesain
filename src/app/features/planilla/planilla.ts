@@ -151,7 +151,7 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
               <th class="px-3 py-2.5 text-left">Previsión</th>
               <th class="px-3 py-2.5 text-right">Valor</th>
               <th class="px-2 py-2.5 text-center w-20">% Clín.</th>
-              @for (c of columnasSemana(); track c) {
+              @for (c of columnasSemana(); track $index) {
                 <th class="w-14 px-2 py-2 text-center whitespace-nowrap"
                     [class.text-brand-300]="!enMes(c)">
                   <div class="leading-tight">
@@ -203,7 +203,7 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
                     <span class="text-xs text-gray-400 pr-1">%</span>
                   </span>
                 </td>
-                @for (c of columnasSemana(); track c) {
+                @for (c of columnasSemana(); track $index) {
                   <td class="w-14 px-1 py-1 text-center" [class.bg-gray-200]="!enMes(c)">
                     @if (enMes(c)) {
                       <input type="number" inputmode="numeric" min="0" [value]="f.celdas[c] || ''"
@@ -242,7 +242,7 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
               <td class="!border-brand-200"></td>
               <td class="!border-brand-200 text-right pr-3 text-[10px] font-medium text-brand-500">semana →</td>
               <td class="!border-brand-200"></td>
-              @for (c of columnasSemana(); track c) {
+              @for (c of columnasSemana(); track $index) {
                 <td class="!border-brand-200 px-2 py-2.5 text-center tabular-nums">{{ calculo().totalColSemana[c] || '' }}</td>
               }
               <td class="!border-brand-200 px-3 py-2.5 text-center tabular-nums bg-brand-200">{{ calculo().totalCantidadMes }}</td>
