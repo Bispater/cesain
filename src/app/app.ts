@@ -1,12 +1,18 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { VersionService } from './core/services/version.service';
+import { UpdateBanner } from './shared/update-banner/update-banner';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
-  templateUrl: './app.html',
-  styleUrl: './app.css'
+  imports: [RouterOutlet, UpdateBanner],
+  template: `
+    <app-update-banner />
+    <router-outlet />
+  `,
 })
 export class App {
-  protected readonly title = signal('cesain');
+  constructor() {
+    inject(VersionService).iniciar();
+  }
 }

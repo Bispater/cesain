@@ -80,7 +80,7 @@ import { Spinner } from '../../shared/spinner/spinner';
 
       <!-- Pacientes -->
       <div class="rounded-2xl bg-white p-5 shadow-sm border border-gray-100">
-        <p class="text-sm text-gray-500">Pacientes / prestaciones</p>
+        <p class="text-sm text-gray-500">Pacientes atendidos</p>
         <p class="text-3xl font-extrabold text-gray-800 mt-1">
           {{ resumen().totalPacientes }}
         </p>

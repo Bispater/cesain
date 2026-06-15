@@ -1,7 +1,8 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, ErrorHandler, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
 import { PreloadAllModules, provideRouter, withComponentInputBinding, withPreloading } from '@angular/router';
 
 import { routes } from './app.routes';
+import { GlobalErrorHandler } from './core/error-handler';
 import { environment } from '../environments/environment';
 import { PRESTACION_REPOSITORY } from './core/repositories/prestacion.repository';
 import { LocalPrestacionRepository } from './core/repositories/local-prestacion.repository';
@@ -16,6 +17,7 @@ import { FirestoreProfesionalRepository } from './core/repositories/firestore-pr
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
+    { provide: ErrorHandler, useClass: GlobalErrorHandler },
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes, withComponentInputBinding(), withPreloading(PreloadAllModules)),
 
