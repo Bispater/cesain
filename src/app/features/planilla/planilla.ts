@@ -147,7 +147,7 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
         <table class="w-full min-w-[1120px] text-sm border-collapse [&_td]:border [&_td]:border-gray-200 [&_th]:border [&_th]:border-brand-500">
           <thead>
             <tr class="bg-brand-600 text-white text-[11px] font-semibold uppercase tracking-wide">
-              <th class="px-3 py-2.5 text-left sticky left-0 bg-brand-600 z-10 min-w-[14rem]">Prestación</th>
+              <th class="px-3 py-2.5 text-left sticky left-0 bg-brand-600 z-10 min-w-[20rem]">Prestación</th>
               <th class="px-3 py-2.5 text-left">Previsión</th>
               <th class="px-3 py-2.5 text-right">Valor</th>
               <th class="px-2 py-2.5 text-center w-20">% Clín.</th>
@@ -173,7 +173,7 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
                   <input [value]="f.servicio" (input)="setCampo(i, 'servicio', $any($event.target).value)"
                          [class.bg-green-100]="celdaModificada(i + '|servicio')"
                          [class.bg-transparent]="!celdaModificada(i + '|servicio')"
-                         class="w-56 px-2 py-1.5 text-gray-800 rounded-md outline-none
+                         class="w-full min-w-[18rem] px-2 py-1.5 text-gray-800 rounded-md outline-none
                                 focus:bg-white focus:ring-2 focus:ring-brand-200" />
                 </td>
                 <td class="px-1.5 py-1">
