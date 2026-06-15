@@ -21,5 +21,8 @@ service cloud.firestore {
     match /sedes/{id} {
       allow read, write: if true;
     }
+    match /especialidades/{id} {
+      allow read, write: if true;
+    }
   }
 }

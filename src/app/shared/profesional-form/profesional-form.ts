@@ -41,7 +41,13 @@ function vacio(nombre = ''): Profesional {
           </label>
           <label class="text-sm">
             <span class="text-gray-600">Especialidad</span>
-            <input [(ngModel)]="d.especialidad" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:ring-2 focus:ring-brand-200" />
+            <select [(ngModel)]="d.especialidad" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:ring-2 focus:ring-brand-200">
+              <option value="">— Selecciona —</option>
+              @for (e of cat.especialidades(); track e.id) { <option [value]="e.nombre">{{ e.nombre }}</option> }
+              @if (d.especialidad && !especialidadEnCatalogo()) {
+                <option [value]="d.especialidad">{{ d.especialidad }} (actual)</option>
+              }
+            </select>
           </label>
           <div class="text-sm col-span-2">
             <span class="text-gray-600">Sedes donde atiende</span>
@@ -118,6 +124,10 @@ export class ProfesionalForm implements OnInit {
     this.d = p
       ? { ...p, sedes: [...p.sedes], porcentajeClinica: Math.round(p.porcentajeClinica * 100) }
       : vacio(this.nombreInicial().trim());
+  }
+
+  especialidadEnCatalogo(): boolean {
+    return this.cat.especialidades().some((e) => e.nombre === this.d.especialidad);
   }
 
   toggleSede(nombre: string) {

@@ -17,14 +17,32 @@ const SEDES_DEFAULT: ItemCatalogo[] = [
   { id: 'valparaiso', nombre: 'Valparaíso' },
   { id: 'quintero', nombre: 'Quintero' },
 ];
+const ESPECIALIDADES_DEFAULT: ItemCatalogo[] = [
+  { id: 'medicina-general', nombre: 'Medicina General' },
+  { id: 'pediatria', nombre: 'Pediatría' },
+  { id: 'ginecologia', nombre: 'Ginecología' },
+  { id: 'traumatologia', nombre: 'Traumatología' },
+  { id: 'otorrinolaringologia', nombre: 'Otorrinolaringología' },
+  { id: 'nutricion', nombre: 'Nutrición' },
+  { id: 'psicologia', nombre: 'Psicología' },
+  { id: 'fonoaudiologia', nombre: 'Fonoaudiología' },
+  { id: 'kinesiologia', nombre: 'Kinesiología' },
+  { id: 'matrona', nombre: 'Matrona' },
+  { id: 'enfermeria-obstetricia', nombre: 'Enfermería / Obstetricia' },
+  { id: 'podologia', nombre: 'Podología' },
+  { id: 'especialista-varices', nombre: 'Especialista en Varices' },
+  { id: 'tecnologia-medica', nombre: 'Tecnología Médica' },
+  { id: 'odontologia', nombre: 'Odontología' },
+];
 
-/** Administra los catálogos editables: Tipos de profesional y Sedes. */
+/** Administra los catálogos editables: Tipos, Sedes y Especialidades. */
 @Injectable({ providedIn: 'root' })
 export class CatalogosService {
   private readonly usarFb = environment.usarFirebase;
 
   readonly tipos = signal<ItemCatalogo[]>([]);
   readonly sedes = signal<ItemCatalogo[]>([]);
+  readonly especialidades = signal<ItemCatalogo[]>([]);
   readonly cargando = signal(true);
 
   constructor() {
@@ -39,6 +57,7 @@ export class CatalogosService {
   private async cargar() {
     this.tipos.set(await this.leer('tipos', TIPOS_DEFAULT));
     this.sedes.set(await this.leer('sedes', SEDES_DEFAULT));
+    this.especialidades.set(await this.leer('especialidades', ESPECIALIDADES_DEFAULT));
     this.cargando.set(false);
   }
 
@@ -64,6 +83,18 @@ export class CatalogosService {
   async eliminarSede(id: string) {
     this.sedes.update((a) => a.filter((x) => x.id !== id));
     await this.eliminar('sedes', id, this.sedes());
+  }
+
+  // ───────── Especialidades ─────────
+  async agregarEspecialidad(nombre: string) {
+    const item = this.nuevoItem(nombre, this.especialidades());
+    if (!item) return;
+    this.especialidades.update((a) => [...a, item].sort((x, y) => x.nombre.localeCompare(y.nombre)));
+    await this.persistir('especialidades', item, this.especialidades());
+  }
+  async eliminarEspecialidad(id: string) {
+    this.especialidades.update((a) => a.filter((x) => x.id !== id));
+    await this.eliminar('especialidades', id, this.especialidades());
   }
 
   // ───────── Internos ─────────

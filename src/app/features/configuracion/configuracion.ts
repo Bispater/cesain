@@ -12,11 +12,11 @@ import { Spinner } from '../../shared/spinner/spinner';
     <header class="mb-6">
       <h1 class="text-2xl font-bold text-gray-800">Configuración</h1>
       <p class="text-sm text-gray-500">
-        Administra los tipos de profesional y las sedes que aparecen en los formularios.
+        Administra los tipos de profesional, las sedes y las especialidades que aparecen en los formularios.
       </p>
     </header>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 max-w-6xl">
       <!-- Tipos -->
       <section class="rounded-2xl bg-white shadow-sm border border-gray-100 p-5">
         <h2 class="font-bold text-gray-800 mb-1">Tipos de profesional</h2>
@@ -72,6 +72,34 @@ import { Spinner } from '../../shared/spinner/spinner';
           }
         </ul>
       </section>
+
+      <!-- Especialidades -->
+      <section class="rounded-2xl bg-white shadow-sm border border-gray-100 p-5">
+        <h2 class="font-bold text-gray-800 mb-1">Especialidades</h2>
+        <p class="text-xs text-gray-400 mb-4">Ej: Medicina General, Fonoaudiología, Pediatría…</p>
+
+        <div class="flex gap-2 mb-4">
+          <input [value]="nuevaEspecialidad()" (input)="nuevaEspecialidad.set($any($event.target).value)"
+                 (keyup.enter)="agregarEspecialidad()" placeholder="Nueva especialidad…"
+                 class="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm
+                        focus:border-brand-400 focus:ring-2 focus:ring-brand-200 outline-none" />
+          <button (click)="agregarEspecialidad()"
+                  class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-4">
+            Agregar
+          </button>
+        </div>
+
+        <ul class="divide-y divide-gray-100 max-h-80 overflow-y-auto">
+          @for (e of cat.especialidades(); track e.id) {
+            <li class="flex items-center justify-between py-2.5">
+              <span class="text-sm text-gray-700">{{ e.nombre }}</span>
+              <button (click)="eliminar('especialidad', e)" class="text-xs text-red-500 hover:underline">Eliminar</button>
+            </li>
+          } @empty {
+            <li class="py-3">@if (cat.cargando()) { <app-spinner /> } @else { <span class="text-sm text-gray-400">Sin especialidades.</span> }</li>
+          }
+        </ul>
+      </section>
     </div>
   `,
 })
@@ -83,6 +111,7 @@ export class Configuracion {
 
   readonly nuevoTipo = signal('');
   readonly nuevaSede = signal('');
+  readonly nuevaEspecialidad = signal('');
 
   async agregarTipo() {
     const n = this.nuevoTipo().trim();
@@ -100,10 +129,22 @@ export class Configuracion {
     this.toast.exito('Sede agregada');
   }
 
-  async eliminar(que: 'tipo' | 'sede', item: ItemCatalogo) {
+  async agregarEspecialidad() {
+    const n = this.nuevaEspecialidad().trim();
+    if (!n) return;
+    await this.cat.agregarEspecialidad(n);
+    this.nuevaEspecialidad.set('');
+    this.toast.exito('Especialidad agregada');
+  }
+
+  async eliminar(que: 'tipo' | 'sede' | 'especialidad', item: ItemCatalogo) {
     // No permitir eliminar si está ligado a profesionales existentes.
     const enUso = this.profSvc.items().filter((p) =>
-      que === 'tipo' ? p.tipoProfesional === item.id : p.sedes.includes(item.nombre),
+      que === 'tipo'
+        ? p.tipoProfesional === item.id
+        : que === 'sede'
+          ? p.sedes.includes(item.nombre)
+          : p.especialidad === item.nombre,
     ).length;
     if (enUso > 0) {
       this.toast.error(
@@ -112,15 +153,13 @@ export class Configuracion {
       return;
     }
 
-    const ok = await this.confirm.ask({
-      titulo: que === 'tipo' ? 'Eliminar tipo' : 'Eliminar sede',
-      mensaje: `¿Eliminar "${item.nombre}"?`,
-      confirmar: 'Eliminar',
-      tono: 'peligro',
-    });
+    const titulo =
+      que === 'tipo' ? 'Eliminar tipo' : que === 'sede' ? 'Eliminar sede' : 'Eliminar especialidad';
+    const ok = await this.confirm.ask({ titulo, mensaje: `¿Eliminar "${item.nombre}"?`, confirmar: 'Eliminar', tono: 'peligro' });
     if (!ok) return;
     if (que === 'tipo') await this.cat.eliminarTipo(item.id);
-    else await this.cat.eliminarSede(item.id);
+    else if (que === 'sede') await this.cat.eliminarSede(item.id);
+    else await this.cat.eliminarEspecialidad(item.id);
     this.toast.exito('Eliminado');
   }
 }
