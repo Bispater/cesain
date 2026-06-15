@@ -26,7 +26,7 @@ function vacio(): PrestacionApsorad {
           <app-icon name="back" [size]="15" class="transition-transform group-hover:-translate-x-0.5" />
           Volver a APSORAD
         </a>
-        <h1 class="text-2xl font-bold text-gray-800">Catálogo APSORAD</h1>
+        <h1 class="text-2xl font-bold text-gray-800">Prestaciones APSORAD</h1>
         <p class="text-sm text-gray-500">Ecografías y Rayos, cada una con su valor Fonasa y Particular.</p>
       </div>
       <button (click)="abrirNueva()" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-4 py-2 shadow-md">+ Nueva prestación</button>

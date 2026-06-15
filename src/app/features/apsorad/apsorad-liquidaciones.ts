@@ -19,7 +19,7 @@ import { Spinner } from '../../shared/spinner/spinner';
         <p class="text-sm text-gray-500">Liquidaciones de Ecografías y Rayos. Pago a APSORAD = % del valor Fonasa.</p>
       </div>
       <div class="flex items-center gap-2">
-        <a routerLink="/apsorad/catalogo" class="rounded-lg border border-gray-200 bg-white text-gray-600 text-sm font-medium px-3 py-2 hover:bg-gray-50">Catálogo</a>
+        <a routerLink="/apsorad/catalogo" class="rounded-lg border border-gray-200 bg-white text-gray-600 text-sm font-medium px-3 py-2 hover:bg-gray-50">Prestaciones</a>
         <button (click)="abrirNueva()" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-4 py-2 shadow-md">+ Nueva liquidación</button>
       </div>
     </header>
