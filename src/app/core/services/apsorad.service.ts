@@ -1,11 +1,12 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { collection, deleteDoc, doc, getDocs, getFirestore, setDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, getFirestore, query, setDoc, where } from 'firebase/firestore';
 import { firebaseApp } from '../firebase';
 import { environment } from '../../../environments/environment';
 import {
   LiquidacionApsorad,
   PrestacionApsorad,
   recalcularApsorad,
+  RegistroApsorad,
   ServicioApsorad,
 } from '../models/apsorad.model';
 import { APSORAD_PRESTACIONES_SEED } from '../data/apsorad.seed';
@@ -110,6 +111,26 @@ export class ApsoradService {
   async eliminarDefinitivo(id: string) {
     this._liquidaciones.update((arr) => arr.filter((x) => x.id !== id));
     await this.borrarDoc(COL_LIQ, id, this._liquidaciones());
+  }
+
+  // ───────── Historial / auditoría ─────────
+  async registrarHistorial(l: LiquidacionApsorad, cambios: string[], ts = Date.now()) {
+    try {
+      const id = `${l.id}_${ts}`;
+      const reg: RegistroApsorad = {
+        id, fecha: new Date(ts).toISOString(), usuario: this.auth.usuario()?.email ?? '—',
+        liquidacionId: l.id, servicio: l.servicio, sede: l.sede, periodo: l.periodo,
+        totalCobrado: l.totalCobrado, totalApsorad: l.totalApsorad, totalCesain: l.totalCesain, cambios,
+      };
+      if (this.usarFb) await setDoc(doc(this.db, 'apsorad_historial', id), reg);
+    } catch { /* el historial no bloquea el guardado */ }
+  }
+
+  async listarHistorial(liquidacionId: string): Promise<RegistroApsorad[]> {
+    if (!this.usarFb) return [];
+    const q = query(collection(this.db, 'apsorad_historial'), where('liquidacionId', '==', liquidacionId));
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => d.data() as RegistroApsorad).sort((a, b) => b.fecha.localeCompare(a.fecha));
   }
 
   // ───────── Persistencia genérica ─────────

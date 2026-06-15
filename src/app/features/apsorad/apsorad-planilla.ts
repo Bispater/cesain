@@ -1,10 +1,11 @@
-import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, HostListener, computed, effect, inject, input, signal } from '@angular/core';
 import { SlicePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApsoradService } from '../../core/services/apsorad.service';
-import { ItemApsorad, PrestacionApsorad, PrevisionApsorad } from '../../core/models/apsorad.model';
+import { ItemApsorad, PrestacionApsorad, PrevisionApsorad, RegistroApsorad } from '../../core/models/apsorad.model';
 import { nombrePeriodo } from '../../core/models/liquidacion.model';
 import { Semana, diaSemana, enMes, semanasDeMes } from '../../core/util/semanas';
+import { PuedeSalir } from '../../core/guards/unsaved.guard';
 import { ClpPipe } from '../../shared/pipes/clp.pipe';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { ToastService } from '../../shared/toast/toast.service';
@@ -36,9 +37,10 @@ interface FilaA {
           <input type="number" min="0" max="100" [value]="porcentaje()" (input)="setPorcentaje($any($event.target).value)"
                  class="w-16 rounded-lg border border-gray-200 px-2 py-1.5 text-sm text-right focus:ring-2 focus:ring-brand-200 outline-none" />
         </label>
-        <button (click)="abrirPicker()" class="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-brand-600 text-white text-sm font-medium px-3 py-2 hover:bg-brand-700">
-          + Agregar prestación
-        </button>
+        <div class="ml-auto flex items-center gap-2">
+          <button (click)="abrirHistorial()" class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 text-gray-600 text-sm px-3 py-2 hover:bg-gray-50">🕘 Historial</button>
+          <button (click)="abrirPicker()" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 text-white text-sm font-medium px-3 py-2 hover:bg-brand-700">+ Agregar prestación</button>
+        </div>
       </div>
 
       <!-- Navegador de semanas -->
@@ -47,9 +49,11 @@ interface FilaA {
         <div class="inline-flex flex-wrap items-center gap-1 rounded-xl bg-gray-100 p-1">
           @for (s of semanas(); track $index; let idx = $index) {
             <button (click)="semanaSel.set(idx)"
-                    class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                    class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5"
                     [class]="semanaSel() === idx ? 'bg-white text-brand-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'">
               Sem {{ idx + 1 }} <span class="opacity-60 hidden sm:inline">· {{ s.label }}</span>
+              @if (semanasModificadas().has(idx)) { <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span> }
+              @else if (semanaTieneData(s)) { <span class="h-1.5 w-1.5 rounded-full bg-brand-500"></span> }
             </button>
           }
         </div>
@@ -89,13 +93,21 @@ interface FilaA {
                     <option value="FONASA">FONASA</option><option value="PARTICULAR">PARTICULAR</option>
                   </select>
                 </td>
-                <td class="px-1 py-1"><input type="number" min="0" [value]="f.valorFonasa" (input)="setNum(i,'valorFonasa',$any($event.target).value)" class="w-20 px-1 py-1.5 bg-transparent text-right tabular-nums rounded-md outline-none focus:bg-white focus:ring-2 focus:ring-brand-200" /></td>
-                <td class="px-1 py-1"><input type="number" min="0" [value]="f.valorCobrado" (input)="setNum(i,'valorCobrado',$any($event.target).value)" class="w-20 px-1 py-1.5 bg-transparent text-right tabular-nums rounded-md outline-none focus:bg-white focus:ring-2 focus:ring-brand-200" /></td>
-                <td class="px-1 py-1 text-center"><input type="number" min="0" max="100" [value]="f.porcentaje" (input)="setPorc(i,$any($event.target).value)" class="w-12 px-1 py-1.5 bg-transparent text-right tabular-nums rounded-md outline-none focus:bg-white focus:ring-2 focus:ring-brand-200" /></td>
+                <td class="px-1 py-1"><input type="number" min="0" [value]="f.valorFonasa" (input)="setNum(i,'valorFonasa',$any($event.target).value)"
+                  [class.bg-green-100]="celdaModificada(i+'|valorFonasa')" [class.bg-transparent]="!celdaModificada(i+'|valorFonasa')"
+                  class="w-20 px-1 py-1.5 text-right tabular-nums rounded-md outline-none focus:bg-white focus:ring-2 focus:ring-brand-200" /></td>
+                <td class="px-1 py-1"><input type="number" min="0" [value]="f.valorCobrado" (input)="setNum(i,'valorCobrado',$any($event.target).value)"
+                  [class.bg-green-100]="celdaModificada(i+'|valorCobrado')" [class.bg-transparent]="!celdaModificada(i+'|valorCobrado')"
+                  class="w-20 px-1 py-1.5 text-right tabular-nums rounded-md outline-none focus:bg-white focus:ring-2 focus:ring-brand-200" /></td>
+                <td class="px-1 py-1 text-center"><input type="number" min="0" max="100" [value]="f.porcentaje" (input)="setPorc(i,$any($event.target).value)"
+                  [class.bg-green-100]="celdaModificada(i+'|porc')" [class.bg-transparent]="!celdaModificada(i+'|porc')"
+                  class="w-12 px-1 py-1.5 text-right tabular-nums rounded-md outline-none focus:bg-white focus:ring-2 focus:ring-brand-200" /></td>
                 @for (c of columnasSemana(); track $index) {
                   <td class="px-0.5 py-0.5 text-center" [class.bg-gray-200]="!esMes(c)">
                     @if (esMes(c)) {
-                      <input type="number" min="0" [value]="f.celdas[c] || ''" (input)="setCelda(i,c,$any($event.target).value)" class="w-11 px-1 py-1.5 bg-transparent text-center tabular-nums rounded-md outline-none focus:bg-white focus:ring-2 focus:ring-brand-200" />
+                      <input type="number" min="0" [value]="f.celdas[c] || ''" (input)="setCelda(i,c,$any($event.target).value)"
+                        [class.bg-green-100]="celdaModificada(i+'|'+c)" [class.bg-transparent]="!celdaModificada(i+'|'+c)"
+                        class="w-11 px-1 py-1.5 text-center tabular-nums rounded-md outline-none focus:bg-white focus:ring-2 focus:ring-brand-200" />
                     }
                   </td>
                 }
@@ -125,7 +137,8 @@ interface FilaA {
        </div>
       </div>
 
-      <div class="flex justify-end mt-3">
+      <div class="flex flex-wrap items-center justify-end gap-3 mt-3">
+        @if (hayCambios()) { <span class="text-sm text-amber-600 mr-auto">● Tienes cambios sin guardar</span> }
         <button (click)="guardar()" [disabled]="guardando()" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 shadow-sm disabled:opacity-60">
           {{ guardando() ? 'Guardando…' : 'Guardar cambios' }}
         </button>
@@ -136,6 +149,41 @@ interface FilaA {
         <div class="rounded-2xl bg-white border border-gray-100 p-5 flex justify-between items-center"><span class="font-semibold text-brand-700">PAGO APSORAD</span><span class="text-xl font-extrabold text-brand-700">{{ calculo().totalApsorad | clp }}</span></div>
         <div class="rounded-2xl bg-green-50 border border-green-100 p-5 flex justify-between items-center"><span class="font-semibold text-green-700">QUEDA CESAIN</span><span class="text-xl font-extrabold text-green-700">{{ calculo().totalCesain | clp }}</span></div>
       </div>
+
+      @if (mostrarHistorial()) {
+        <div class="fixed inset-0 bg-black/40 grid place-items-center z-50 p-4" (click)="mostrarHistorial.set(false)">
+          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 max-h-[85vh] overflow-y-auto" (click)="$event.stopPropagation()">
+            <h2 class="text-lg font-bold text-gray-800 mb-1">Historial de cambios</h2>
+            <p class="text-xs text-gray-500 mb-4">{{ l.servicio === 'ECOGRAFIA' ? 'Ecografías' : 'Rayos' }} · {{ l.sede }} · {{ nombrePeriodo(l.periodo) }}</p>
+            @if (cargandoHistorial()) {
+              <p class="py-8 text-center text-gray-400">Cargando…</p>
+            } @else {
+              <ol class="relative border-l border-gray-200 ml-2">
+                @for (h of historialItems(); track h.id) {
+                  <li class="mb-5 ml-4">
+                    <span class="absolute -left-1.5 h-3 w-3 rounded-full bg-brand-500 border-2 border-white"></span>
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="text-sm font-semibold text-gray-800">{{ fechaCL(h.fecha) }}</span>
+                      <span class="text-xs px-2 py-0.5 rounded-full bg-brand-50 text-brand-700">{{ h.usuario }}</span>
+                    </div>
+                    <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-1">
+                      <span>Cobrado: <b class="text-gray-700">{{ h.totalCobrado | clp }}</b></span>
+                      <span>APSORAD: <b class="text-brand-700">{{ h.totalApsorad | clp }}</b></span>
+                      <span>CESAIN: <b class="text-green-700">{{ h.totalCesain | clp }}</b></span>
+                    </div>
+                    @if (h.cambios?.length) {
+                      <ul class="mt-2 max-h-40 overflow-y-auto rounded-lg bg-gray-50 border border-gray-100 p-2.5 text-xs text-gray-600 space-y-1">
+                        @for (c of h.cambios; track $index) { <li class="flex gap-1.5"><span class="text-brand-400 shrink-0">•</span><span>{{ c }}</span></li> }
+                      </ul>
+                    }
+                  </li>
+                } @empty { <li class="ml-4 text-sm text-gray-400 py-4">Aún no hay registros. Guarda para empezar a auditar.</li> }
+              </ol>
+            }
+            <button (click)="mostrarHistorial.set(false)" class="mt-4 text-sm text-gray-500 hover:text-gray-700">Cerrar</button>
+          </div>
+        </div>
+      }
 
       @if (mostrarPicker()) {
         <div class="fixed inset-0 bg-black/40 grid place-items-center z-50 p-4" (click)="mostrarPicker.set(false)">
@@ -166,7 +214,7 @@ interface FilaA {
     }
   `,
 })
-export class ApsoradPlanilla {
+export class ApsoradPlanilla implements PuedeSalir {
   readonly svc = inject(ApsoradService);
   private confirm = inject(ConfirmService);
   private toast = inject(ToastService);
@@ -179,6 +227,16 @@ export class ApsoradPlanilla {
   readonly porcentaje = signal(40);
   readonly guardando = signal(false);
   private initId: string | null = null;
+
+  /** Marcas de cambios sin guardar (verde + aviso al salir). */
+  readonly celdasModificadas = signal<Set<string>>(new Set());
+  readonly semanasModificadas = signal<Set<number>>(new Set());
+  readonly hayCambios = computed(() => this.semanasModificadas().size > 0 || this.celdasModificadas().size > 0);
+
+  // Historial
+  readonly mostrarHistorial = signal(false);
+  readonly historialItems = signal<RegistroApsorad[]>([]);
+  readonly cargandoHistorial = signal(false);
 
   readonly semanas = computed<Semana[]>(() => { const l = this.base(); return l ? semanasDeMes(l.periodo) : []; });
   readonly semanaSel = signal(0);
@@ -210,8 +268,19 @@ export class ApsoradPlanilla {
         const sem = semanasDeMes(l.periodo);
         const idx = sem.findIndex((s) => s.dias.some((d) => fechas.has(d)));
         this.semanaSel.set(idx < 0 ? 0 : idx);
+        this.celdasModificadas.set(new Set());
+        this.semanasModificadas.set(new Set());
       }
     });
+  }
+
+  celdaModificada(clave: string): boolean { return this.celdasModificadas().has(clave); }
+  private marcar(clave: string) {
+    this.celdasModificadas.update((s) => new Set(s).add(clave));
+    this.semanasModificadas.update((s) => new Set(s).add(this.semanaSel()));
+  }
+  semanaTieneData(s: Semana): boolean {
+    return this.filas().some((f) => s.dias.some((d) => (f.celdas[d] || 0) > 0));
   }
 
   esMes(iso: string): boolean { return enMes(iso, this.base()?.periodo ?? ''); }
@@ -241,11 +310,12 @@ export class ApsoradPlanilla {
     const p = Math.min(100, Math.max(0, +v || 0));
     this.porcentaje.set(p);
     this.filas.update((fs) => fs.map((f) => ({ ...f, porcentaje: p })));
+    this.marcar('global');
   }
-  setPorc(i: number, v: string) { this.filas()[i].porcentaje = Math.min(100, Math.max(0, +v || 0)); this.bump(); }
-  setNum(i: number, campo: 'valorFonasa' | 'valorCobrado', v: string) { this.filas()[i][campo] = Math.max(0, +v || 0); this.bump(); }
-  setCelda(i: number, c: string, v: string) { this.filas()[i].celdas[c] = Math.max(0, Math.floor(+v || 0)); this.bump(); }
-  setPrevision(i: number, v: PrevisionApsorad) { this.filas()[i].prevision = v; this.bump(); }
+  setPorc(i: number, v: string) { this.filas()[i].porcentaje = Math.min(100, Math.max(0, +v || 0)); this.marcar(i + '|porc'); this.bump(); }
+  setNum(i: number, campo: 'valorFonasa' | 'valorCobrado', v: string) { this.filas()[i][campo] = Math.max(0, +v || 0); this.marcar(i + '|' + campo); this.bump(); }
+  setCelda(i: number, c: string, v: string) { this.filas()[i].celdas[c] = Math.max(0, Math.floor(+v || 0)); this.marcar(i + '|' + c); this.bump(); }
+  setPrevision(i: number, v: PrevisionApsorad) { this.filas()[i].prevision = v; this.marcar(i + '|prev'); this.bump(); }
 
   abrirPicker() { this.pickerPrevision.set('FONASA'); this.mostrarPicker.set(true); }
   agregarDesde(p: PrestacionApsorad) {
@@ -255,11 +325,12 @@ export class ApsoradPlanilla {
       valorFonasa: p.valorFonasa, valorCobrado: prev === 'FONASA' ? p.valorFonasa : p.valorParticular,
       porcentaje: this.porcentaje(), celdas: {},
     }]);
+    this.marcar('add');
     this.mostrarPicker.set(false);
   }
   async eliminarFila(i: number) {
     const ok = await this.confirm.ask({ titulo: 'Quitar prestación', mensaje: `¿Quitar "${this.filas()[i]?.nombre}"?`, confirmar: 'Quitar', tono: 'peligro' });
-    if (ok) this.filas.update((fs) => fs.filter((_, idx) => idx !== i));
+    if (ok) { this.filas.update((fs) => fs.filter((_, idx) => idx !== i)); this.marcar('del'); }
   }
 
   async guardar() {
@@ -274,9 +345,14 @@ export class ApsoradPlanilla {
         porcentaje: f.porcentaje / 100, celdas,
       };
     });
+    const cambios = resumirCambiosApsorad(l.items, items);
     this.guardando.set(true);
     try {
       await this.svc.guardarLiquidacion({ ...l, porcentaje: this.porcentaje() / 100, items });
+      this.celdasModificadas.set(new Set());
+      this.semanasModificadas.set(new Set());
+      const guardada = this.svc.buscarPorId(l.id);
+      if (guardada) void this.svc.registrarHistorial(guardada, cambios);
       this.toast.exito('Liquidación APSORAD guardada');
     } catch {
       this.toast.error('No se pudo guardar.');
@@ -284,4 +360,54 @@ export class ApsoradPlanilla {
       this.guardando.set(false);
     }
   }
+
+  // ───────── Historial ─────────
+  async abrirHistorial() {
+    const l = this.base();
+    if (!l) return;
+    this.mostrarHistorial.set(true);
+    this.cargandoHistorial.set(true);
+    this.historialItems.set(await this.svc.listarHistorial(l.id));
+    this.cargandoHistorial.set(false);
+  }
+  fechaCL(iso: string): string {
+    return new Intl.DateTimeFormat('es-CL', {
+      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+      timeZone: 'America/Santiago',
+    }).format(new Date(iso));
+  }
+
+  // ───────── Aviso de cambios sin guardar ─────────
+  puedeSalir(): boolean | Promise<boolean> {
+    if (!this.hayCambios()) return true;
+    return this.confirm.ask({
+      titulo: 'Cambios sin guardar',
+      mensaje: 'Tienes cambios en esta liquidación APSORAD que no se han guardado. ¿Salir de todas formas?',
+      confirmar: 'Salir sin guardar', cancelar: 'Seguir editando', tono: 'peligro',
+    });
+  }
+  @HostListener('window:beforeunload', ['$event'])
+  avisarCierre(e: BeforeUnloadEvent) {
+    if (this.hayCambios()) { e.preventDefault(); e.returnValue = ''; }
+  }
+}
+
+/** Resumen de cambios para el historial (cantidad mensual por prestación). */
+function resumirCambiosApsorad(antes: ItemApsorad[], despues: ItemApsorad[]): string[] {
+  const tot = (it: ItemApsorad) => Object.values(it.celdas ?? {}).reduce((s, n) => s + (n || 0), 0);
+  const mapA = new Map(antes.map((i) => [`${i.nombre}|${i.prevision}`, tot(i)]));
+  const mapD = new Map(despues.map((i) => [`${i.nombre}|${i.prevision}`, tot(i)]));
+  const claves = [...new Set([...mapA.keys(), ...mapD.keys()])].sort();
+  const lineas: string[] = [];
+  for (const k of claves) {
+    const a = mapA.get(k) ?? 0;
+    const d = mapD.get(k) ?? 0;
+    const [nombre, prev] = k.split('|');
+    if (a === d) continue;
+    if (!mapA.has(k)) lineas.push(`+ "${nombre}" [${prev}]: ${d}`);
+    else if (!mapD.has(k)) lineas.push(`− Se quitó "${nombre}" [${prev}]`);
+    else lineas.push(`"${nombre}" [${prev}]: ${a} → ${d}`);
+  }
+  if (!lineas.length) lineas.push('Se volvió a guardar (sin cambios en cantidades).');
+  return lineas;
 }

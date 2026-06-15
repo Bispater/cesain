@@ -59,6 +59,21 @@ export interface LiquidacionApsorad {
   eliminadaPor?: string;
 }
 
+/** Registro de auditoría de una liquidación APSORAD. */
+export interface RegistroApsorad {
+  id: string;
+  fecha: string;
+  usuario: string;
+  liquidacionId: string;
+  servicio: ServicioApsorad;
+  sede: string;
+  periodo: string;
+  totalCobrado: number;
+  totalApsorad: number;
+  totalCesain: number;
+  cambios: string[];
+}
+
 /** Cantidad total de un ítem (suma de celdas, o el campo cantidad legado). */
 export function cantidadItem(it: ItemApsorad): number {
   if (it.celdas) return Object.values(it.celdas).reduce((s, n) => s + (n || 0), 0);

@@ -74,6 +74,7 @@ export const routes: Routes = [
       {
         path: 'apsorad/:id',
         canActivate: [apsoradGuard],
+        canDeactivate: [unsavedGuard],
         loadComponent: () =>
           import('./features/apsorad/apsorad-planilla').then((m) => m.ApsoradPlanilla),
       },
