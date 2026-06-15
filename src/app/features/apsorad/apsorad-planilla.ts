@@ -189,19 +189,26 @@ interface FilaA {
         <div class="fixed inset-0 bg-black/40 grid place-items-center z-50 p-4" (click)="mostrarPicker.set(false)">
           <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[85vh] overflow-y-auto" (click)="$event.stopPropagation()">
             <h2 class="text-lg font-bold text-gray-800 mb-1">Agregar prestación</h2>
-            <p class="text-xs text-gray-500 mb-3">Del catálogo APSORAD ({{ l.servicio === 'ECOGRAFIA' ? 'Ecografías' : 'Rayos' }}).</p>
-            <label class="flex items-center gap-2 text-sm mb-3"><span class="text-gray-600">Previsión:</span>
-              <select [value]="pickerPrevision()" (change)="pickerPrevision.set($any($event.target).value)" class="rounded-lg border border-gray-200 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-brand-200">
-                <option value="FONASA">FONASA</option><option value="PARTICULAR">PARTICULAR</option>
-              </select>
-            </label>
-            <div class="border border-gray-100 rounded-xl divide-y divide-gray-100">
+            <p class="text-xs text-gray-500 mb-3">Del catálogo APSORAD (todas).</p>
+            <div class="flex flex-wrap items-center gap-2 mb-3">
+              <input [value]="pickerBusqueda()" (input)="pickerBusqueda.set($any($event.target).value)" placeholder="Buscar por nombre…"
+                     class="flex-1 min-w-[10rem] rounded-lg border border-gray-200 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-brand-200" />
+              <label class="flex items-center gap-2 text-sm"><span class="text-gray-600">Previsión:</span>
+                <select [value]="pickerPrevision()" (change)="pickerPrevision.set($any($event.target).value)" class="rounded-lg border border-gray-200 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-brand-200">
+                  <option value="FONASA">FONASA</option><option value="PARTICULAR">PARTICULAR</option>
+                </select>
+              </label>
+            </div>
+            <div class="border border-gray-100 rounded-xl divide-y divide-gray-100 max-h-72 overflow-y-auto">
               @for (p of catalogo(); track p.id) {
-                <button (click)="agregarDesde(p)" class="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-brand-50">
-                  <span class="text-sm font-medium text-gray-800">{{ p.nombre }}</span>
-                  <span class="text-xs text-gray-500">F {{ p.valorFonasa | clp }} · P {{ p.valorParticular | clp }}</span>
+                <button (click)="agregarDesde(p)" class="w-full flex items-center justify-between gap-3 px-3 py-2 text-left hover:bg-brand-50">
+                  <span class="min-w-0">
+                    <span class="text-sm font-medium text-gray-800">{{ p.nombre }}</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 ml-1">{{ p.servicio === 'ECOGRAFIA' ? 'Eco' : 'Rayos' }}</span>
+                  </span>
+                  <span class="text-xs text-gray-500 shrink-0">F {{ p.valorFonasa | clp }} · P {{ p.valorParticular | clp }}</span>
                 </button>
-              } @empty { <p class="px-3 py-4 text-sm text-gray-400 text-center">Sin prestaciones de este servicio en el catálogo.</p> }
+              } @empty { <p class="px-3 py-4 text-sm text-gray-400 text-center">Sin resultados en el catálogo.</p> }
             </div>
             <button (click)="mostrarPicker.set(false)" class="mt-4 text-sm text-gray-500 hover:text-gray-700">Cerrar</button>
           </div>
@@ -244,9 +251,13 @@ export class ApsoradPlanilla implements PuedeSalir {
 
   readonly mostrarPicker = signal(false);
   readonly pickerPrevision = signal<PrevisionApsorad>('FONASA');
+  readonly pickerBusqueda = signal('');
   readonly catalogo = computed(() => {
-    const l = this.base();
-    return l ? this.svc.prestacionesPorServicio(l.servicio).filter((p) => p.activo) : [];
+    const q = this.pickerBusqueda().toLowerCase().trim();
+    return this.svc.prestaciones()
+      .filter((p) => p.activo)
+      .filter((p) => !q || p.nombre.toLowerCase().includes(q) || p.codigo.toLowerCase().includes(q))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre));
   });
 
   constructor() {
@@ -317,7 +328,7 @@ export class ApsoradPlanilla implements PuedeSalir {
   setCelda(i: number, c: string, v: string) { this.filas()[i].celdas[c] = Math.max(0, Math.floor(+v || 0)); this.marcar(i + '|' + c); this.bump(); }
   setPrevision(i: number, v: PrevisionApsorad) { this.filas()[i].prevision = v; this.marcar(i + '|prev'); this.bump(); }
 
-  abrirPicker() { this.pickerPrevision.set('FONASA'); this.mostrarPicker.set(true); }
+  abrirPicker() { this.pickerPrevision.set('FONASA'); this.pickerBusqueda.set(''); this.mostrarPicker.set(true); }
   agregarDesde(p: PrestacionApsorad) {
     const prev = this.pickerPrevision();
     this.filas.update((fs) => [...fs, {
