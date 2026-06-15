@@ -51,6 +51,17 @@ input[type="number"] {
   appearance: textfield;
 }
 
+/* Dropdowns (select) con flecha personalizada y prolija */
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237e57c2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.65rem center;
+  background-size: 1em;
+  padding-right: 2.1rem !important;
+}
+
 /* Animación del snackbar */
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(14px) scale(0.98); }

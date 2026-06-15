@@ -242,9 +242,14 @@ export class LiquidacionService {
       if (l.eliminada) return l; // lo que está en papelera no se re-asocia
       let prof = l.profesionalId ? profs.find((p) => p.id === l.profesionalId) : undefined;
       if (!prof) prof = emparejarProfesional(l.profesional, profs);
-      if (prof && (l.profesionalId !== prof.id || l.profesional !== prof.nombre)) {
+      // Especialidad del catálogo (si el profesional la tiene definida).
+      const esp = prof?.especialidad?.trim() ? prof.especialidad : l.especialidad;
+      if (
+        prof &&
+        (l.profesionalId !== prof.id || l.profesional !== prof.nombre || l.especialidad !== esp)
+      ) {
         cambio = true;
-        const nueva = { ...l, profesionalId: prof.id, profesional: prof.nombre };
+        const nueva = { ...l, profesionalId: prof.id, profesional: prof.nombre, especialidad: esp };
         void this.repo.guardar(nueva);
         return nueva;
       }
