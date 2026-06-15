@@ -47,11 +47,6 @@ export const routes: Routes = [
           import('./features/prestaciones/prestaciones').then((m) => m.Prestaciones),
       },
       {
-        path: 'importar',
-        loadComponent: () =>
-          import('./features/importar/importar').then((m) => m.Importar),
-      },
-      {
         path: 'configuracion',
         loadComponent: () =>
           import('./features/configuracion/configuracion').then((m) => m.Configuracion),
