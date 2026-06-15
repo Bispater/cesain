@@ -5,6 +5,7 @@ import { ProfesionalService } from '../core/services/profesional.service';
 import { ConfirmDialog } from '../shared/confirm/confirm-dialog';
 import { Icon, IconName } from '../shared/icon/icon';
 import { Toast } from '../shared/toast/toast';
+import { APP_VERSION } from '../core/version';
 
 @Component({
   selector: 'app-shell',
@@ -67,6 +68,7 @@ import { Toast } from '../shared/toast/toast';
                            flex items-center gap-2.5 px-1 py-1">
               <app-icon name="logout" [size]="18" /> Cerrar sesión
             </button>
+            <p class="text-[10px] text-brand-300/70 mt-3">v{{ version }}</p>
           </div>
         </aside>
 
@@ -88,18 +90,22 @@ export class Shell {
   private prof = inject(ProfesionalService);
   readonly menuAbierto = signal(false);
 
-  readonly nav: { path: string; label: string; icon: IconName; soloAdmin?: boolean }[] = [
+  readonly version = APP_VERSION;
+
+  readonly nav: { path: string; label: string; icon: IconName; soloAdmin?: boolean; apsorad?: boolean }[] = [
     { path: '/', label: 'Dashboard', icon: 'dashboard', soloAdmin: true },
     { path: '/liquidaciones', label: 'Liquidaciones', icon: 'liquidaciones', soloAdmin: true },
     { path: '/profesionales', label: 'Profesionales', icon: 'profesionales', soloAdmin: true },
     { path: '/prestaciones', label: 'Prestaciones', icon: 'prestaciones', soloAdmin: true },
-    { path: '/apsorad', label: 'APSORAD', icon: 'apsorad' },
+    { path: '/apsorad', label: 'APSORAD', icon: 'apsorad', apsorad: true },
     { path: '/configuracion', label: 'Configuración', icon: 'config', soloAdmin: true },
   ];
 
-  /** Items visibles según el rol (apsorad solo ve su módulo). */
+  /** Items visibles según el rol. */
   readonly navVisible = computed(() =>
-    this.nav.filter((i) => this.auth.esAdmin() || !i.soloAdmin),
+    this.nav.filter((i) =>
+      i.apsorad ? this.auth.puedeApsorad() : i.soloAdmin ? this.auth.puedeAdmin() : true,
+    ),
   );
 
   async salir() {

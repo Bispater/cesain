@@ -91,7 +91,7 @@ import { Spinner } from '../../shared/spinner/spinner';
           </button>
         </div>
 
-        <ul class="divide-y divide-gray-100 max-h-80 overflow-y-auto">
+        <ul class="divide-y divide-gray-100">
           @for (e of cat.especialidades(); track e.id) {
             <li class="flex items-center justify-between py-2.5">
               <span class="text-sm text-gray-700">{{ e.nombre }}</span>
@@ -118,7 +118,8 @@ import { Spinner } from '../../shared/spinner/spinner';
         <select [value]="nuevoRol()" (change)="nuevoRol.set($any($event.target).value)"
                 class="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-200 outline-none">
           <option value="apsorad">APSORAD (solo su módulo)</option>
-          <option value="admin">Admin (ve todo)</option>
+          <option value="admin">Admin (gestión, sin APSORAD)</option>
+          <option value="superadmin">Superadmin (todo + APSORAD)</option>
         </select>
         <button (click)="asignarUsuario()" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-4">Guardar</button>
       </div>
@@ -126,7 +127,7 @@ import { Spinner } from '../../shared/spinner/spinner';
         @for (u of usuarios.items(); track u.id) {
           <li class="flex items-center justify-between py-2.5">
             <span class="text-sm text-gray-700">{{ u.email }}
-              <span class="text-[11px] px-2 py-0.5 rounded-full bg-brand-100 text-brand-700 ml-1">{{ u.rol === 'apsorad' ? 'APSORAD' : 'Admin' }}</span>
+              <span class="text-[11px] px-2 py-0.5 rounded-full bg-brand-100 text-brand-700 ml-1">{{ u.rol === 'apsorad' ? 'APSORAD' : u.rol === 'superadmin' ? 'Superadmin' : 'Admin' }}</span>
             </span>
             <button (click)="eliminarUsuario(u)" class="text-xs text-red-500 hover:underline">Quitar</button>
           </li>

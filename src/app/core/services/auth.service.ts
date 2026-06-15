@@ -8,7 +8,8 @@ import {
 import { doc, getDoc, getFirestore } from 'firebase/firestore';
 import { firebaseApp, firebaseAuth } from '../firebase';
 
-export type Rol = 'admin' | 'apsorad';
+export type Rol = 'admin' | 'superadmin' | 'apsorad';
+const ROLES: Rol[] = ['admin', 'superadmin', 'apsorad'];
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -19,7 +20,10 @@ export class AuthService {
 
   /** Rol del usuario (de la colección `usuarios`). Sin documento => 'admin'. */
   readonly rol = signal<Rol>('admin');
-  readonly esAdmin = computed(() => this.rol() === 'admin');
+  /** admin y superadmin ven el área de gestión (todo menos lo exclusivo de APSORAD). */
+  readonly puedeAdmin = computed(() => this.rol() === 'admin' || this.rol() === 'superadmin');
+  /** superadmin y apsorad ven el módulo APSORAD. */
+  readonly puedeApsorad = computed(() => this.rol() === 'superadmin' || this.rol() === 'apsorad');
 
   /** Se resuelve cuando Firebase entrega el primer estado de sesión (y el rol). */
   private readonly _listo: Promise<void>;
@@ -38,8 +42,8 @@ export class AuthService {
     if (!u?.email) return 'admin';
     try {
       const snap = await getDoc(doc(getFirestore(firebaseApp()), 'usuarios', u.email.toLowerCase()));
-      const rol = snap.data()?.['rol'];
-      return rol === 'apsorad' ? 'apsorad' : 'admin';
+      const rol = snap.data()?.['rol'] as Rol | undefined;
+      return rol && ROLES.includes(rol) ? rol : 'admin';
     } catch {
       return 'admin';
     }
