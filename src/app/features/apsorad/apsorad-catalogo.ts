@@ -7,6 +7,7 @@ import { ClpPipe } from '../../shared/pipes/clp.pipe';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { ToastService } from '../../shared/toast/toast.service';
 import { Spinner } from '../../shared/spinner/spinner';
+import { Icon } from '../../shared/icon/icon';
 
 function vacio(): PrestacionApsorad {
   return { id: '', codigo: '', nombre: '', servicio: 'ECOGRAFIA', valorFonasa: 0, valorParticular: 0, activo: true };
@@ -14,11 +15,17 @@ function vacio(): PrestacionApsorad {
 
 @Component({
   selector: 'app-apsorad-catalogo',
-  imports: [FormsModule, ClpPipe, RouterLink, Spinner],
+  imports: [FormsModule, ClpPipe, RouterLink, Spinner, Icon],
   template: `
     <header class="flex flex-wrap items-center justify-between gap-3 mb-6">
       <div>
-        <a routerLink="/apsorad" class="inline-flex items-center gap-1 text-xs text-brand-600 hover:underline mb-1">← APSORAD</a>
+        <a routerLink="/apsorad"
+           class="group inline-flex items-center gap-1.5 mb-2 rounded-lg border border-gray-200 bg-white
+                  px-2.5 py-1.5 text-xs font-medium text-gray-600 shadow-sm
+                  hover:text-brand-700 hover:border-brand-200 transition-colors">
+          <app-icon name="back" [size]="15" class="transition-transform group-hover:-translate-x-0.5" />
+          Volver a APSORAD
+        </a>
         <h1 class="text-2xl font-bold text-gray-800">Catálogo APSORAD</h1>
         <p class="text-sm text-gray-500">Ecografías y Rayos, cada una con su valor Fonasa y Particular.</p>
       </div>

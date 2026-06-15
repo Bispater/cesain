@@ -9,6 +9,7 @@ import { PuedeSalir } from '../../core/guards/unsaved.guard';
 import { ClpPipe } from '../../shared/pipes/clp.pipe';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { ToastService } from '../../shared/toast/toast.service';
+import { Icon } from '../../shared/icon/icon';
 
 interface FilaA {
   id: string;
@@ -22,11 +23,17 @@ interface FilaA {
 
 @Component({
   selector: 'app-apsorad-planilla',
-  imports: [ClpPipe, RouterLink, SlicePipe],
+  imports: [ClpPipe, RouterLink, SlicePipe, Icon],
   template: `
     @if (base(); as l) {
       <header class="mb-4">
-        <a routerLink="/apsorad" class="inline-flex items-center gap-1 text-xs text-brand-600 hover:underline mb-1">← APSORAD</a>
+        <a routerLink="/apsorad"
+           class="group inline-flex items-center gap-1.5 mb-2 rounded-lg border border-gray-200 bg-white
+                  px-2.5 py-1.5 text-xs font-medium text-gray-600 shadow-sm
+                  hover:text-brand-700 hover:border-brand-200 transition-colors">
+          <app-icon name="back" [size]="15" class="transition-transform group-hover:-translate-x-0.5" />
+          Volver a APSORAD
+        </a>
         <h1 class="text-2xl font-bold text-gray-800">{{ l.servicio === 'ECOGRAFIA' ? 'Ecografías' : 'Rayos' }} · {{ l.sede }}</h1>
         <p class="text-sm text-gray-500">{{ nombrePeriodo(l.periodo) }} · pago a APSORAD = % del valor Fonasa</p>
       </header>
