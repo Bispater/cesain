@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { CatalogosService, ItemCatalogo } from '../../core/services/catalogos.service';
 import { ProfesionalService } from '../../core/services/profesional.service';
 import { UsuariosService, UsuarioRol } from '../../core/services/usuarios.service';
-import { Rol } from '../../core/services/auth.service';
+import { AuthService, Rol } from '../../core/services/auth.service';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { ToastService } from '../../shared/toast/toast.service';
 import { Spinner } from '../../shared/spinner/spinner';
@@ -104,7 +104,8 @@ import { Spinner } from '../../shared/spinner/spinner';
       </section>
     </div>
 
-    <!-- Usuarios y roles -->
+    <!-- Usuarios y roles (solo superadmin) -->
+    @if (auth.esSuperadmin()) {
     <section class="rounded-2xl bg-white shadow-sm border border-gray-100 p-5 mt-6 max-w-3xl">
       <h2 class="font-bold text-gray-800 mb-1">Usuarios y roles</h2>
       <p class="text-xs text-gray-400 mb-4">
@@ -136,10 +137,12 @@ import { Spinner } from '../../shared/spinner/spinner';
         }
       </ul>
     </section>
+    }
   `,
 })
 export class Configuracion {
   readonly cat = inject(CatalogosService);
+  readonly auth = inject(AuthService);
   readonly usuarios = inject(UsuariosService);
   private profSvc = inject(ProfesionalService);
   private confirm = inject(ConfirmService);

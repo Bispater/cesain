@@ -22,7 +22,7 @@ export interface PrestacionApsorad {
   activo: boolean;
 }
 
-/** Una línea de la liquidación APSORAD (cantidad del mes de una prestación+previsión). */
+/** Una línea de la liquidación APSORAD (prestación+previsión, con detalle por día). */
 export interface ItemApsorad {
   id: string;
   nombre: string;
@@ -31,7 +31,12 @@ export interface ItemApsorad {
   valorFonasa: number;
   /** Valor que cobra CESAIN (Fonasa o Particular según la previsión). */
   valorCobrado: number;
-  cantidad: number;
+  /** % del valor Fonasa que recibe APSORAD para esta prestación (decimal, ej. 0.40). */
+  porcentaje?: number;
+  /** Cantidades por día: fecha ISO -> cantidad. */
+  celdas?: Record<string, number>;
+  /** Cantidad total (legado / fallback si no hay celdas). */
+  cantidad?: number;
 }
 
 export interface LiquidacionApsorad {
@@ -54,15 +59,23 @@ export interface LiquidacionApsorad {
   eliminadaPor?: string;
 }
 
+/** Cantidad total de un ítem (suma de celdas, o el campo cantidad legado). */
+export function cantidadItem(it: ItemApsorad): number {
+  if (it.celdas) return Object.values(it.celdas).reduce((s, n) => s + (n || 0), 0);
+  return it.cantidad ?? 0;
+}
+
 /** Recalcula los totales de una liquidación APSORAD. */
 export function recalcularApsorad(l: LiquidacionApsorad): LiquidacionApsorad {
   let totalCantidad = 0;
   let totalCobrado = 0;
   let totalApsorad = 0;
   for (const it of l.items) {
-    totalCantidad += it.cantidad;
-    totalCobrado += it.cantidad * it.valorCobrado;
-    totalApsorad += Math.round(it.cantidad * it.valorFonasa * l.porcentaje);
+    const cant = cantidadItem(it);
+    const pct = it.porcentaje ?? l.porcentaje;
+    totalCantidad += cant;
+    totalCobrado += cant * it.valorCobrado;
+    totalApsorad += Math.round(cant * it.valorFonasa * pct);
   }
   return { ...l, totalCantidad, totalCobrado, totalApsorad, totalCesain: totalCobrado - totalApsorad };
 }

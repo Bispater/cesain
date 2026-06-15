@@ -24,6 +24,8 @@ export class AuthService {
   readonly puedeAdmin = computed(() => this.rol() === 'admin' || this.rol() === 'superadmin');
   /** superadmin y apsorad ven el módulo APSORAD. */
   readonly puedeApsorad = computed(() => this.rol() === 'superadmin' || this.rol() === 'apsorad');
+  /** Solo superadmin gestiona usuarios y roles. */
+  readonly esSuperadmin = computed(() => this.rol() === 'superadmin');
 
   /** Se resuelve cuando Firebase entrega el primer estado de sesión (y el rol). */
   private readonly _listo: Promise<void>;
