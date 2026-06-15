@@ -1,6 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
 import { CatalogosService, ItemCatalogo } from '../../core/services/catalogos.service';
 import { ProfesionalService } from '../../core/services/profesional.service';
+import { UsuariosService, UsuarioRol } from '../../core/services/usuarios.service';
+import { Rol } from '../../core/services/auth.service';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { ToastService } from '../../shared/toast/toast.service';
 import { Spinner } from '../../shared/spinner/spinner';
@@ -101,10 +103,43 @@ import { Spinner } from '../../shared/spinner/spinner';
         </ul>
       </section>
     </div>
+
+    <!-- Usuarios y roles -->
+    <section class="rounded-2xl bg-white shadow-sm border border-gray-100 p-5 mt-6 max-w-3xl">
+      <h2 class="font-bold text-gray-800 mb-1">Usuarios y roles</h2>
+      <p class="text-xs text-gray-400 mb-4">
+        Asigna el rol por correo. El rol <b>APSORAD</b> solo ve el módulo APSORAD; <b>Admin</b> ve todo.
+        Crea el usuario en Firebase Authentication con ese mismo correo.
+      </p>
+      <div class="flex flex-wrap gap-2 mb-4">
+        <input [value]="nuevoEmail()" (input)="nuevoEmail.set($any($event.target).value)" type="email"
+               placeholder="correo@cesain.cl"
+               class="flex-1 min-w-[12rem] rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-200 outline-none" />
+        <select [value]="nuevoRol()" (change)="nuevoRol.set($any($event.target).value)"
+                class="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-200 outline-none">
+          <option value="apsorad">APSORAD (solo su módulo)</option>
+          <option value="admin">Admin (ve todo)</option>
+        </select>
+        <button (click)="asignarUsuario()" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-4">Guardar</button>
+      </div>
+      <ul class="divide-y divide-gray-100">
+        @for (u of usuarios.items(); track u.id) {
+          <li class="flex items-center justify-between py-2.5">
+            <span class="text-sm text-gray-700">{{ u.email }}
+              <span class="text-[11px] px-2 py-0.5 rounded-full bg-brand-100 text-brand-700 ml-1">{{ u.rol === 'apsorad' ? 'APSORAD' : 'Admin' }}</span>
+            </span>
+            <button (click)="eliminarUsuario(u)" class="text-xs text-red-500 hover:underline">Quitar</button>
+          </li>
+        } @empty {
+          <li class="py-3"><span class="text-sm text-gray-400">{{ usuarios.cargando() ? 'Cargando…' : 'Sin roles asignados (todos entran como admin por defecto).' }}</span></li>
+        }
+      </ul>
+    </section>
   `,
 })
 export class Configuracion {
   readonly cat = inject(CatalogosService);
+  readonly usuarios = inject(UsuariosService);
   private profSvc = inject(ProfesionalService);
   private confirm = inject(ConfirmService);
   private toast = inject(ToastService);
@@ -112,6 +147,20 @@ export class Configuracion {
   readonly nuevoTipo = signal('');
   readonly nuevaSede = signal('');
   readonly nuevaEspecialidad = signal('');
+  readonly nuevoEmail = signal('');
+  readonly nuevoRol = signal<Rol>('apsorad');
+
+  async asignarUsuario() {
+    const e = this.nuevoEmail().trim();
+    if (!e) return;
+    await this.usuarios.asignar(e, this.nuevoRol());
+    this.nuevoEmail.set('');
+    this.toast.exito('Rol asignado');
+  }
+  async eliminarUsuario(u: UsuarioRol) {
+    await this.usuarios.eliminar(u.id);
+    this.toast.exito('Quitado');
+  }
 
   async agregarTipo() {
     const n = this.nuevoTipo().trim();

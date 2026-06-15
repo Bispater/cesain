@@ -24,5 +24,14 @@ service cloud.firestore {
     match /especialidades/{id} {
       allow read, write: if true;
     }
+    match /usuarios/{id} {
+      allow read, write: if true;
+    }
+    match /apsorad_prestaciones/{id} {
+      allow read, write: if true;
+    }
+    match /apsorad_liquidaciones/{id} {
+      allow read, write: if true;
+    }
   }
 }

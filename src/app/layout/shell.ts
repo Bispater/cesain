@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet, Router } from '@angular/router';
 import { AuthService } from '../core/services/auth.service';
 import { ProfesionalService } from '../core/services/profesional.service';
@@ -49,7 +49,7 @@ import { Toast } from '../shared/toast/toast';
           </div>
 
           <nav class="flex flex-col gap-1 text-sm">
-            @for (item of nav; track item.path) {
+            @for (item of navVisible(); track item.path) {
               <a [routerLink]="item.path" (click)="menuAbierto.set(false)"
                  routerLinkActive="bg-white/15 text-white"
                  [routerLinkActiveOptions]="{ exact: item.path === '/' }"
@@ -88,13 +88,19 @@ export class Shell {
   private prof = inject(ProfesionalService);
   readonly menuAbierto = signal(false);
 
-  readonly nav: { path: string; label: string; icon: IconName }[] = [
-    { path: '/', label: 'Dashboard', icon: 'dashboard' },
-    { path: '/liquidaciones', label: 'Liquidaciones', icon: 'liquidaciones' },
-    { path: '/profesionales', label: 'Profesionales', icon: 'profesionales' },
-    { path: '/prestaciones', label: 'Prestaciones', icon: 'prestaciones' },
-    { path: '/configuracion', label: 'Configuración', icon: 'config' },
+  readonly nav: { path: string; label: string; icon: IconName; soloAdmin?: boolean }[] = [
+    { path: '/', label: 'Dashboard', icon: 'dashboard', soloAdmin: true },
+    { path: '/liquidaciones', label: 'Liquidaciones', icon: 'liquidaciones', soloAdmin: true },
+    { path: '/profesionales', label: 'Profesionales', icon: 'profesionales', soloAdmin: true },
+    { path: '/prestaciones', label: 'Prestaciones', icon: 'prestaciones', soloAdmin: true },
+    { path: '/apsorad', label: 'APSORAD', icon: 'apsorad' },
+    { path: '/configuracion', label: 'Configuración', icon: 'config', soloAdmin: true },
   ];
+
+  /** Items visibles según el rol (apsorad solo ve su módulo). */
+  readonly navVisible = computed(() =>
+    this.nav.filter((i) => this.auth.esAdmin() || !i.soloAdmin),
+  );
 
   async salir() {
     await this.auth.logout();

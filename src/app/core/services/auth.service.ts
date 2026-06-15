@@ -5,7 +5,10 @@ import {
   signOut,
   User,
 } from 'firebase/auth';
-import { firebaseAuth } from '../firebase';
+import { doc, getDoc, getFirestore } from 'firebase/firestore';
+import { firebaseApp, firebaseAuth } from '../firebase';
+
+export type Rol = 'admin' | 'apsorad';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -14,16 +17,32 @@ export class AuthService {
   readonly usuario = this._usuario.asReadonly();
   readonly autenticado = computed(() => this._usuario() !== null);
 
-  /** Se resuelve cuando Firebase entrega el primer estado de sesión. */
+  /** Rol del usuario (de la colección `usuarios`). Sin documento => 'admin'. */
+  readonly rol = signal<Rol>('admin');
+  readonly esAdmin = computed(() => this.rol() === 'admin');
+
+  /** Se resuelve cuando Firebase entrega el primer estado de sesión (y el rol). */
   private readonly _listo: Promise<void>;
 
   constructor() {
     this._listo = new Promise<void>((resolve) => {
-      onAuthStateChanged(this.auth, (u) => {
+      onAuthStateChanged(this.auth, async (u) => {
         this._usuario.set(u);
+        this.rol.set(await this.cargarRol(u));
         resolve();
       });
     });
+  }
+
+  private async cargarRol(u: User | null): Promise<Rol> {
+    if (!u?.email) return 'admin';
+    try {
+      const snap = await getDoc(doc(getFirestore(firebaseApp()), 'usuarios', u.email.toLowerCase()));
+      const rol = snap.data()?.['rol'];
+      return rol === 'apsorad' ? 'apsorad' : 'admin';
+    } catch {
+      return 'admin';
+    }
   }
 
   /** El guard espera esto para no rebotar a /login durante la carga inicial. */
