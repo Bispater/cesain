@@ -118,27 +118,31 @@ import { Spinner } from '../../shared/spinner/spinner';
         </div>
       </div>
 
-      <!-- Gráfico de barras: ingresos por especialidad (card ancho) -->
+      <!-- Gráfico de barras horizontales: ingresos por especialidad (card ancho) -->
       <div class="md:col-span-4 rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
-        <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center justify-between mb-4">
           <p class="text-sm font-semibold text-gray-700">Ingresos por especialidad</p>
           <span class="text-xs text-gray-400">monto bruto facturado</span>
         </div>
 
-        <div class="flex items-end gap-6 h-56">
+        <div class="space-y-3 max-h-96 overflow-y-auto pr-1">
           @for (e of ingresosPorEspecialidad(); track e.especialidad) {
-            <div class="flex-1 flex flex-col items-center justify-end h-full group">
-              <span class="text-xs font-semibold text-gray-700 mb-2">{{ e.valor | clp }}</span>
-              <div class="w-full rounded-t-lg bg-gradient-to-t from-brand-600 to-brand-400
-                          group-hover:from-brand-700 group-hover:to-brand-500 transition-all"
-                   [style.height.%]="e.porcentaje"></div>
-              <span class="text-[11px] text-gray-500 mt-2 text-center leading-tight">
-                {{ e.especialidad }}
-              </span>
-              <span class="text-[10px] text-gray-400">{{ e.pacientes }} pac.</span>
+            <div class="group">
+              <div class="flex items-center justify-between gap-3 text-xs mb-1">
+                <span class="text-gray-700 truncate">
+                  <span class="font-medium">{{ e.especialidad }}</span>
+                  <span class="text-gray-400">· {{ e.pacientes }} pac.</span>
+                </span>
+                <span class="font-semibold text-gray-800 tabular-nums shrink-0">{{ e.valor | clp }}</span>
+              </div>
+              <div class="h-2.5 rounded-full bg-gray-100 overflow-hidden">
+                <div class="h-full rounded-full bg-gradient-to-r from-brand-600 to-brand-400
+                            group-hover:from-brand-700 group-hover:to-brand-500 transition-all"
+                     [style.width.%]="e.porcentaje"></div>
+              </div>
             </div>
           } @empty {
-            <p class="text-sm text-gray-400 self-center mx-auto">Sin datos para el filtro actual.</p>
+            <p class="text-sm text-gray-400 text-center py-6">Sin datos para el filtro actual.</p>
           }
         </div>
       </div>
