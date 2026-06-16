@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ApsoradService } from '../../core/services/apsorad.service';
 import { CatalogosService } from '../../core/services/catalogos.service';
-import { LiquidacionApsorad, ServicioApsorad, SERVICIOS_APSORAD } from '../../core/models/apsorad.model';
+import { LiquidacionApsorad, ServicioApsorad, SERVICIOS_APSORAD, cantidadItem, cobradoApsorad } from '../../core/models/apsorad.model';
 import { nombrePeriodo } from '../../core/models/liquidacion.model';
 import { ClpPipe } from '../../shared/pipes/clp.pipe';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
@@ -39,7 +39,7 @@ import { Spinner } from '../../shared/spinner/spinner';
         </thead>
         <tbody class="divide-y divide-gray-100">
           @for (l of svc.activas(); track l.id) {
-            <tr class="hover:bg-gray-50">
+            <tr class="hover:bg-gray-50 cursor-pointer" (click)="toggle(l.id)">
               <td class="px-4 py-3 font-medium text-gray-800">{{ l.servicio === 'ECOGRAFIA' ? 'Ecografías' : 'Rayos' }}</td>
               <td class="px-4 py-3 text-gray-600">{{ l.sede }}</td>
               <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded-full bg-brand-50 text-brand-700">{{ nombrePeriodo(l.periodo) }}</span></td>
@@ -47,10 +47,40 @@ import { Spinner } from '../../shared/spinner/spinner';
               <td class="px-4 py-3 text-right tabular-nums text-brand-700 font-medium">{{ l.totalApsorad | clp }}</td>
               <td class="px-4 py-3 text-right tabular-nums text-green-700 font-bold">{{ l.totalCesain | clp }}</td>
               <td class="px-4 py-3 text-right whitespace-nowrap">
-                <a [routerLink]="['/apsorad', l.id]" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-3 py-1.5 mr-2">Abrir</a>
-                <button (click)="eliminar(l)" class="text-xs text-red-500 hover:underline">Eliminar</button>
+                <a [routerLink]="['/apsorad', l.id]" (click)="$event.stopPropagation()" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-3 py-1.5 mr-2">Abrir</a>
+                <button (click)="eliminar(l); $event.stopPropagation()" class="text-xs text-red-500 hover:underline mr-2">Eliminar</button>
+                <span class="text-gray-400">{{ abierto() === l.id ? '▲' : '▼' }}</span>
               </td>
             </tr>
+            @if (abierto() === l.id) {
+              <tr class="bg-gray-50/60">
+                <td colspan="7" class="px-6 py-4">
+                  <p class="text-[11px] text-gray-400 mb-2">Detalle ({{ l.porcentaje * 100 }}% del Fonasa a APSORAD)</p>
+                  <table class="w-full text-xs">
+                    <thead class="text-gray-500 text-left">
+                      <tr>
+                        <th class="py-1.5">Prestación</th><th class="py-1.5">Previsión</th>
+                        <th class="py-1.5 text-right">Cant.</th><th class="py-1.5 text-right">Cobrado</th>
+                        <th class="py-1.5 text-right">Total $</th><th class="py-1.5 text-right">APSORAD</th><th class="py-1.5 text-right">CESAIN</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                      @for (f of filasDetalle(l); track $index) {
+                        <tr>
+                          <td class="py-1.5 text-gray-700">{{ f.nombre }}</td>
+                          <td class="py-1.5"><span class="px-1.5 py-0.5 rounded text-[10px]" [class]="f.prevision==='FONASA' ? 'bg-brand-100 text-brand-700' : 'bg-amber-100 text-amber-700'">{{ f.prevision }}</span></td>
+                          <td class="py-1.5 text-right tabular-nums">{{ f.cantidad }}</td>
+                          <td class="py-1.5 text-right tabular-nums">{{ f.cobrado | clp }}</td>
+                          <td class="py-1.5 text-right tabular-nums font-medium">{{ f.total | clp }}</td>
+                          <td class="py-1.5 text-right tabular-nums text-brand-700">{{ f.apsorad | clp }}</td>
+                          <td class="py-1.5 text-right tabular-nums text-green-700">{{ f.cesain | clp }}</td>
+                        </tr>
+                      } @empty { <tr><td colspan="7" class="py-2 text-gray-400">Sin prestaciones cargadas.</td></tr> }
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+            }
           } @empty {
             <tr><td colspan="7" class="px-4 py-10 text-center text-gray-400">
               @if (svc.cargando()) { <app-spinner label="Cargando…" /> } @else { Sin liquidaciones. Crea una nueva. }
@@ -102,6 +132,20 @@ export class ApsoradLiquidaciones {
   private router = inject(Router);
   readonly nombrePeriodo = nombrePeriodo;
   readonly servicios = SERVICIOS_APSORAD;
+
+  readonly abierto = signal<string | null>(null);
+  toggle(id: string) { this.abierto.update((c) => (c === id ? null : id)); }
+  filasDetalle(l: LiquidacionApsorad) {
+    return l.items
+      .map((it) => {
+        const cant = cantidadItem(it);
+        const cobrado = cobradoApsorad(it);
+        const total = cant * cobrado;
+        const apsorad = Math.round(cant * it.valorFonasa * (it.porcentaje ?? l.porcentaje));
+        return { nombre: it.nombre, prevision: it.prevision, cantidad: cant, cobrado, total, apsorad, cesain: total - apsorad };
+      })
+      .filter((f) => f.cantidad > 0);
+  }
 
   readonly mostrarNueva = signal(false);
   readonly servicioSel = signal<ServicioApsorad>('ECOGRAFIA');
