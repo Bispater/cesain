@@ -29,9 +29,14 @@ export class ApsoradService {
   // ───────── Liquidaciones ─────────
   private readonly _liquidaciones = signal<LiquidacionApsorad[]>([]);
   readonly cargando = signal(true);
-  readonly activas = computed(() => this._liquidaciones().filter((l) => !l.eliminada));
+  /** Sin duplicados por id (defensivo ante recreaciones en memoria). */
+  private readonly unicas = computed(() => {
+    const vistos = new Set<string>();
+    return this._liquidaciones().filter((l) => (vistos.has(l.id) ? false : vistos.add(l.id)));
+  });
+  readonly activas = computed(() => this.unicas().filter((l) => !l.eliminada));
   readonly eliminadas = computed(() =>
-    this._liquidaciones().filter((l) => l.eliminada)
+    this.unicas().filter((l) => l.eliminada)
       .sort((a, b) => (b.eliminadaEn ?? '').localeCompare(a.eliminadaEn ?? '')),
   );
 
@@ -76,8 +81,17 @@ export class ApsoradService {
 
   crearLiquidacion(servicio: ServicioApsorad, sede: string, periodo: string): LiquidacionApsorad {
     const id = `${servicio}_${periodo}_${slug(sede)}`;
-    const existente = this.activas().find((l) => l.id === id);
-    if (existente) return existente;
+    const existente = this._liquidaciones().find((l) => l.id === id);
+    if (existente) {
+      if (existente.eliminada) {
+        const react = { ...existente, eliminada: false } as LiquidacionApsorad;
+        delete react.eliminadaEn; delete react.eliminadaPor;
+        this._liquidaciones.update((arr) => arr.map((x) => (x.id === id ? react : x)));
+        void this.guardarDoc(COL_LIQ, id, react, this._liquidaciones());
+        return react;
+      }
+      return existente;
+    }
     const nueva: LiquidacionApsorad = recalcularApsorad({
       id, servicio, sede, periodo, porcentaje: 0.4, items: [],
       totalCantidad: 0, totalCobrado: 0, totalApsorad: 0, totalCesain: 0,
