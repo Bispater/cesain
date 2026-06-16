@@ -12,7 +12,8 @@ export type IconName =
   | 'close'
   | 'config'
   | 'trash'
-  | 'apsorad';
+  | 'apsorad'
+  | 'colapsar';
 
 /** Íconos SVG (estilo Lucide, stroke). Uso: <app-icon name="dashboard" /> */
 @Component({
@@ -66,6 +67,9 @@ export type IconName =
         }
         @case ('apsorad') {
           <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+        }
+        @case ('colapsar') {
+          <path d="M11 17l-5-5 5-5" /><path d="M18 17l-5-5 5-5" />
         }
         @case ('trash') {
           <path d="M3 6h18" />

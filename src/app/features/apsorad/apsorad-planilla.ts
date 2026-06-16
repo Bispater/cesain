@@ -127,7 +127,12 @@ interface FilaA {
                 <td class="px-2 py-2 text-right tabular-nums">{{ f.total | clp }}</td>
                 <td class="px-2 py-2 text-right tabular-nums bg-brand-50 font-medium text-brand-700">{{ f.apsorad | clp }}</td>
                 <td class="px-2 py-2 text-right tabular-nums text-green-700">{{ f.cesain | clp }}</td>
-                <td class="px-2 py-2 text-center"><button (click)="eliminarFila(i)" class="text-gray-400 hover:text-red-600" title="Quitar">✕</button></td>
+                <td class="px-2 py-2 text-center">
+                  <button (click)="eliminarFila(i)" title="Quitar prestación"
+                          class="h-8 w-8 grid place-items-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors mx-auto">
+                    <app-icon name="trash" [size]="16" />
+                  </button>
+                </td>
               </tr>
             } @empty {
               <tr><td colspan="30" class="px-4 py-8 text-center text-gray-400">Sin prestaciones. Usa “+ Agregar prestación”.</td></tr>
@@ -201,16 +206,9 @@ interface FilaA {
         <div class="fixed inset-0 bg-black/40 grid place-items-center z-50 p-4" (click)="mostrarPicker.set(false)">
           <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 max-h-[88vh] overflow-y-auto" (click)="$event.stopPropagation()">
             <h2 class="text-lg font-bold text-gray-800 mb-1">Agregar prestación</h2>
-            <p class="text-xs text-gray-500 mb-3">Del catálogo APSORAD. La previsión define el valor que se cobra al agregar.</p>
-            <div class="flex flex-wrap items-center gap-2 mb-3">
-              <input [value]="pickerBusqueda()" (input)="pickerBusqueda.set($any($event.target).value)" placeholder="Buscar por nombre o código…"
-                     class="flex-1 min-w-[12rem] rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-200" />
-              <label class="flex items-center gap-2 text-sm"><span class="text-gray-600">Previsión:</span>
-                <select [value]="pickerPrevision()" (change)="pickerPrevision.set($any($event.target).value)" class="rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-200">
-                  <option value="FONASA">FONASA</option><option value="PARTICULAR">PARTICULAR</option>
-                </select>
-              </label>
-            </div>
+            <p class="text-xs text-gray-500 mb-3">Del catálogo APSORAD. La previsión la ajustas por fila en la tabla.</p>
+            <input [value]="pickerBusqueda()" (input)="pickerBusqueda.set($any($event.target).value)" placeholder="Buscar por nombre o código…"
+                   class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm mb-3 outline-none focus:ring-2 focus:ring-brand-200" />
             <div class="flex gap-1 bg-gray-100 rounded-lg p-1 mb-3 w-fit">
               @for (s of filtrosServicio; track s.valor) {
                 <button (click)="pickerServicio.set(s.valor)" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors"

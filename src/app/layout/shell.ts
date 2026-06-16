@@ -24,6 +24,14 @@ import { APP_VERSION } from '../core/version';
         <span class="font-bold">CESAIN</span>
       </div>
 
+      <!-- Botón flotante para reabrir el menú (escritorio, cuando está colapsado) -->
+      @if (colapsado()) {
+        <button (click)="toggleColapsar()" title="Mostrar menú"
+                class="hidden md:flex fixed top-3 left-3 z-50 h-9 w-9 items-center justify-center rounded-lg bg-brand-700 text-white shadow-lg hover:bg-brand-800">
+          <app-icon name="menu" [size]="20" />
+        </button>
+      }
+
       <div class="flex">
         <!-- Fondo oscuro (móvil) -->
         @if (menuAbierto()) {
@@ -34,7 +42,8 @@ import { APP_VERSION } from '../core/version';
         <aside class="fixed md:sticky top-0 z-50 md:z-auto h-screen w-64 shrink-0
                       bg-gradient-to-b from-brand-700 to-brand-900 text-white flex flex-col p-5
                       transition-transform duration-200 md:translate-x-0"
-               [class.-translate-x-full]="!menuAbierto()">
+               [class.-translate-x-full]="!menuAbierto()"
+               [class.md:hidden]="colapsado()">
           <div class="flex items-center gap-3 mb-8">
             <div class="h-11 w-11 rounded-xl bg-accent grid place-items-center">
               <span class="text-2xl font-extrabold text-brand-800">C</span>
@@ -46,6 +55,10 @@ import { APP_VERSION } from '../core/version';
             <button (click)="menuAbierto.set(false)" aria-label="Cerrar menú"
                     class="md:hidden p-1 rounded-lg hover:bg-white/10">
               <app-icon name="close" [size]="20" />
+            </button>
+            <button (click)="toggleColapsar()" aria-label="Esconder menú" title="Esconder menú"
+                    class="hidden md:grid place-items-center p-1 rounded-lg hover:bg-white/10 text-brand-200 hover:text-white">
+              <app-icon name="colapsar" [size]="20" />
             </button>
           </div>
 
@@ -89,6 +102,13 @@ export class Shell {
   // Se instancia aquí para que la sincronización profesional↔liquidaciones corra siempre.
   private prof = inject(ProfesionalService);
   readonly menuAbierto = signal(false);
+  /** Sidebar colapsado en escritorio (preferencia del usuario, persiste). */
+  readonly colapsado = signal(localStorage.getItem('cesain_sidebar_colapsado') === '1');
+
+  toggleColapsar() {
+    this.colapsado.update((v) => !v);
+    localStorage.setItem('cesain_sidebar_colapsado', this.colapsado() ? '1' : '0');
+  }
 
   readonly version = APP_VERSION;
 
