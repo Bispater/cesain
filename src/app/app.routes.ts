@@ -22,8 +22,8 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       {
+        // Dashboard público: visible para todos los roles (incluye resumen APSORAD).
         path: '',
-        canActivate: [soloAdminGuard],
         loadComponent: () =>
           import('./features/dashboard/dashboard').then((m) => m.Dashboard),
       },

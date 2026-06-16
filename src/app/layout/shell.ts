@@ -134,7 +134,7 @@ export class Shell {
   readonly version = APP_VERSION;
 
   readonly nav: { path: string; label: string; icon: IconName; soloAdmin?: boolean; apsorad?: boolean }[] = [
-    { path: '/', label: 'Dashboard', icon: 'dashboard', soloAdmin: true },
+    { path: '/', label: 'Dashboard', icon: 'dashboard' },
     { path: '/liquidaciones', label: 'Liquidaciones', icon: 'liquidaciones', soloAdmin: true },
     { path: '/profesionales', label: 'Profesionales', icon: 'profesionales', soloAdmin: true },
     { path: '/prestaciones', label: 'Prestaciones', icon: 'prestaciones', soloAdmin: true },
