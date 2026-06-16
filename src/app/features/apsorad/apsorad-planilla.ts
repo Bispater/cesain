@@ -2,7 +2,7 @@ import { Component, HostListener, computed, effect, inject, input, signal } from
 import { SlicePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApsoradService } from '../../core/services/apsorad.service';
-import { ItemApsorad, PrestacionApsorad, PrevisionApsorad, RegistroApsorad } from '../../core/models/apsorad.model';
+import { ItemApsorad, PrestacionApsorad, PrevisionApsorad, RegistroApsorad, ServicioApsorad } from '../../core/models/apsorad.model';
 import { nombrePeriodo } from '../../core/models/liquidacion.model';
 import { Semana, diaSemana, enMes, semanasDeMes } from '../../core/util/semanas';
 import { PuedeSalir } from '../../core/guards/unsaved.guard';
@@ -199,19 +199,25 @@ interface FilaA {
 
       @if (mostrarPicker()) {
         <div class="fixed inset-0 bg-black/40 grid place-items-center z-50 p-4" (click)="mostrarPicker.set(false)">
-          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[85vh] overflow-y-auto" (click)="$event.stopPropagation()">
+          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 max-h-[88vh] overflow-y-auto" (click)="$event.stopPropagation()">
             <h2 class="text-lg font-bold text-gray-800 mb-1">Agregar prestación</h2>
-            <p class="text-xs text-gray-500 mb-3">Del catálogo APSORAD (todas).</p>
+            <p class="text-xs text-gray-500 mb-3">Del catálogo APSORAD. La previsión define el valor que se cobra al agregar.</p>
             <div class="flex flex-wrap items-center gap-2 mb-3">
-              <input [value]="pickerBusqueda()" (input)="pickerBusqueda.set($any($event.target).value)" placeholder="Buscar por nombre…"
-                     class="flex-1 min-w-[10rem] rounded-lg border border-gray-200 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-brand-200" />
+              <input [value]="pickerBusqueda()" (input)="pickerBusqueda.set($any($event.target).value)" placeholder="Buscar por nombre o código…"
+                     class="flex-1 min-w-[12rem] rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-200" />
               <label class="flex items-center gap-2 text-sm"><span class="text-gray-600">Previsión:</span>
-                <select [value]="pickerPrevision()" (change)="pickerPrevision.set($any($event.target).value)" class="rounded-lg border border-gray-200 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-brand-200">
+                <select [value]="pickerPrevision()" (change)="pickerPrevision.set($any($event.target).value)" class="rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-200">
                   <option value="FONASA">FONASA</option><option value="PARTICULAR">PARTICULAR</option>
                 </select>
               </label>
             </div>
-            <div class="border border-gray-100 rounded-xl divide-y divide-gray-100 max-h-72 overflow-y-auto">
+            <div class="flex gap-1 bg-gray-100 rounded-lg p-1 mb-3 w-fit">
+              @for (s of filtrosServicio; track s.valor) {
+                <button (click)="pickerServicio.set(s.valor)" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
+                        [class]="pickerServicio() === s.valor ? 'bg-white text-brand-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'">{{ s.label }}</button>
+              }
+            </div>
+            <div class="border border-gray-100 rounded-xl divide-y divide-gray-100 max-h-[26rem] overflow-y-auto">
               @for (p of catalogo(); track p.id) {
                 <button (click)="agregarDesde(p)" class="w-full flex items-center justify-between gap-3 px-3 py-2 text-left hover:bg-brand-50">
                   <span class="min-w-0">
@@ -264,10 +270,18 @@ export class ApsoradPlanilla implements PuedeSalir {
   readonly mostrarPicker = signal(false);
   readonly pickerPrevision = signal<PrevisionApsorad>('FONASA');
   readonly pickerBusqueda = signal('');
+  readonly pickerServicio = signal<'TODOS' | ServicioApsorad>('TODOS');
+  readonly filtrosServicio: { valor: 'TODOS' | ServicioApsorad; label: string }[] = [
+    { valor: 'TODOS', label: 'Todas' },
+    { valor: 'ECOGRAFIA', label: 'Eco' },
+    { valor: 'RAYOS', label: 'Rayos' },
+  ];
   readonly catalogo = computed(() => {
     const q = this.pickerBusqueda().toLowerCase().trim();
+    const s = this.pickerServicio();
     return this.svc.prestaciones()
       .filter((p) => p.activo)
+      .filter((p) => s === 'TODOS' || p.servicio === s)
       .filter((p) => !q || p.nombre.toLowerCase().includes(q) || p.codigo.toLowerCase().includes(q))
       .sort((a, b) => a.nombre.localeCompare(b.nombre));
   });
@@ -342,7 +356,7 @@ export class ApsoradPlanilla implements PuedeSalir {
   setCelda(i: number, c: string, v: string) { this.filas()[i].celdas[c] = Math.max(0, Math.floor(+v || 0)); this.marcar(i + '|' + c); this.bump(); }
   setPrevision(i: number, v: PrevisionApsorad) { this.filas()[i].prevision = v; this.marcar(i + '|prev'); this.bump(); }
 
-  abrirPicker() { this.pickerPrevision.set('FONASA'); this.pickerBusqueda.set(''); this.mostrarPicker.set(true); }
+  abrirPicker() { this.pickerPrevision.set('FONASA'); this.pickerBusqueda.set(''); this.pickerServicio.set('TODOS'); this.mostrarPicker.set(true); }
   agregarDesde(p: PrestacionApsorad) {
     const prev = this.pickerPrevision();
     this.filas.update((fs) => [...fs, {
