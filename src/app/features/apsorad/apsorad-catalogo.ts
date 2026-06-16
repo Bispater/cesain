@@ -10,7 +10,7 @@ import { Spinner } from '../../shared/spinner/spinner';
 import { Icon } from '../../shared/icon/icon';
 
 function vacio(): PrestacionApsorad {
-  return { id: '', codigo: '', nombre: '', servicio: 'ECOGRAFIA', valorFonasa: 0, valorParticular: 0, activo: true };
+  return { id: '', codigo: '', nombre: '', servicio: 'ECOGRAFIA', valorFonasa: 0, valorCopago: 0, valorParticular: 0, activo: true };
 }
 
 @Component({
@@ -47,6 +47,7 @@ function vacio(): PrestacionApsorad {
             <th class="px-4 py-3 font-semibold">Prestación</th>
             <th class="px-4 py-3 font-semibold">Servicio</th>
             <th class="px-4 py-3 font-semibold text-right">Valor Fonasa</th>
+            <th class="px-4 py-3 font-semibold text-right">Copago</th>
             <th class="px-4 py-3 font-semibold text-right">Valor Particular</th>
             <th class="px-4 py-3"></th>
           </tr>
@@ -58,6 +59,7 @@ function vacio(): PrestacionApsorad {
               <td class="px-4 py-3 font-medium text-gray-800">{{ p.nombre }}</td>
               <td class="px-4 py-3"><span class="text-[11px] px-2 py-0.5 rounded-full bg-brand-100 text-brand-700">{{ p.servicio === 'ECOGRAFIA' ? 'Ecografía' : 'Rayos' }}</span></td>
               <td class="px-4 py-3 text-right tabular-nums">{{ p.valorFonasa | clp }}</td>
+              <td class="px-4 py-3 text-right tabular-nums text-gray-500">{{ p.valorCopago | clp }}</td>
               <td class="px-4 py-3 text-right tabular-nums">{{ p.valorParticular | clp }}</td>
               <td class="px-4 py-3 text-right whitespace-nowrap">
                 <button (click)="abrirEditar(p)" class="text-xs text-brand-600 hover:underline mr-3">Editar</button>
@@ -65,7 +67,7 @@ function vacio(): PrestacionApsorad {
               </td>
             </tr>
           } @empty {
-            <tr><td colspan="6" class="px-4 py-10 text-center text-gray-400">
+            <tr><td colspan="7" class="px-4 py-10 text-center text-gray-400">
               @if (svc.cargandoCatalogo()) { <app-spinner /> } @else { Sin prestaciones. }
             </td></tr>
           }
@@ -88,6 +90,8 @@ function vacio(): PrestacionApsorad {
               </select></label>
             <label class="text-sm"><span class="text-gray-600">Valor Fonasa</span>
               <input type="number" min="0" [(ngModel)]="d.valorFonasa" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-right outline-none focus:ring-2 focus:ring-brand-200" /></label>
+            <label class="text-sm"><span class="text-gray-600">Copago</span>
+              <input type="number" min="0" [(ngModel)]="d.valorCopago" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-right outline-none focus:ring-2 focus:ring-brand-200" /></label>
             <label class="text-sm"><span class="text-gray-600">Valor Particular</span>
               <input type="number" min="0" [(ngModel)]="d.valorParticular" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-right outline-none focus:ring-2 focus:ring-brand-200" /></label>
             <label class="text-sm"><span class="text-gray-600">Estado</span>
@@ -136,7 +140,7 @@ export class ApsoradCatalogo {
     const d = this.draft();
     if (!d) return;
     if (!d.nombre.trim()) { this.errorForm.set('El nombre es obligatorio.'); return; }
-    const item: PrestacionApsorad = { ...d, valorFonasa: +d.valorFonasa, valorParticular: +d.valorParticular };
+    const item: PrestacionApsorad = { ...d, valorFonasa: +d.valorFonasa, valorCopago: +d.valorCopago, valorParticular: +d.valorParticular };
     if (this.editandoId()) await this.svc.actualizarPrestacion(item);
     else await this.svc.crearPrestacion({ ...item, id: d.codigo.trim() || `ap-${crypto.randomUUID().slice(0, 8)}` });
     this.cerrar();

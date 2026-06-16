@@ -11,13 +11,14 @@ export const SERVICIOS_APSORAD: { valor: ServicioApsorad; label: string }[] = [
   { valor: 'RAYOS', label: 'Rayos' },
 ];
 
-/** Prestación del catálogo APSORAD: tiene valor Fonasa y valor Particular. */
+/** Prestación del catálogo APSORAD: valor Fonasa, Copago y Particular. */
 export interface PrestacionApsorad {
   id: string;
   codigo: string;
   nombre: string;
   servicio: ServicioApsorad;
   valorFonasa: number;
+  valorCopago: number;
   valorParticular: number;
   activo: boolean;
 }
@@ -29,14 +30,23 @@ export interface ItemApsorad {
   prevision: PrevisionApsorad;
   /** Valor Fonasa: base del pago a APSORAD (siempre). */
   valorFonasa: number;
-  /** Valor que cobra CESAIN (Fonasa o Particular según la previsión). */
-  valorCobrado: number;
+  /** Copago (informativo). */
+  valorCopago?: number;
+  /** Valor Particular. */
+  valorParticular: number;
   /** % del valor Fonasa que recibe APSORAD para esta prestación (decimal, ej. 0.40). */
   porcentaje?: number;
   /** Cantidades por día: fecha ISO -> cantidad. */
   celdas?: Record<string, number>;
   /** Cantidad total (legado / fallback si no hay celdas). */
   cantidad?: number;
+  /** @deprecated usar cobradoApsorad() */
+  valorCobrado?: number;
+}
+
+/** Valor que cobra CESAIN según la previsión (Fonasa o Particular). */
+export function cobradoApsorad(it: ItemApsorad): number {
+  return it.prevision === 'FONASA' ? it.valorFonasa : it.valorParticular;
 }
 
 export interface LiquidacionApsorad {
@@ -89,7 +99,7 @@ export function recalcularApsorad(l: LiquidacionApsorad): LiquidacionApsorad {
     const cant = cantidadItem(it);
     const pct = it.porcentaje ?? l.porcentaje;
     totalCantidad += cant;
-    totalCobrado += cant * it.valorCobrado;
+    totalCobrado += cant * cobradoApsorad(it);
     totalApsorad += Math.round(cant * it.valorFonasa * pct);
   }
   return { ...l, totalCantidad, totalCobrado, totalApsorad, totalCesain: totalCobrado - totalApsorad };

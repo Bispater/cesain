@@ -16,7 +16,8 @@ interface FilaA {
   nombre: string;
   prevision: PrevisionApsorad;
   valorFonasa: number;
-  valorCobrado: number;
+  valorCopago: number;
+  valorParticular: number;
   porcentaje: number; // entero (40)
   celdas: Record<string, number>;
 }
@@ -75,7 +76,8 @@ interface FilaA {
               <th class="px-3 py-2.5 text-left sticky left-0 bg-brand-600 z-10 min-w-[15rem]">Prestación</th>
               <th class="px-2 py-2.5 text-left">Previsión</th>
               <th class="px-2 py-2.5 text-right">V. Fonasa</th>
-              <th class="px-2 py-2.5 text-right">V. Cobrado</th>
+              <th class="px-2 py-2.5 text-right">Copago</th>
+              <th class="px-2 py-2.5 text-right">V. Particular</th>
               <th class="px-2 py-2.5 text-center w-16">%</th>
               @for (c of columnasSemana(); track $index) {
                 <th class="w-12 px-1 py-2 text-center" [class.text-brand-300]="!esMes(c)">
@@ -100,11 +102,14 @@ interface FilaA {
                     <option value="FONASA">FONASA</option><option value="PARTICULAR">PARTICULAR</option>
                   </select>
                 </td>
-                <td class="px-1 py-1"><input type="number" min="0" [value]="f.valorFonasa" (input)="setNum(i,'valorFonasa',$any($event.target).value)"
+                <td class="px-1 py-1" [class.ring-2]="f.prevision==='FONASA'" [class.ring-brand-300]="f.prevision==='FONASA'"><input type="number" min="0" [value]="f.valorFonasa" (input)="setNum(i,'valorFonasa',$any($event.target).value)"
                   [class.bg-green-100]="celdaModificada(i+'|valorFonasa')" [class.bg-transparent]="!celdaModificada(i+'|valorFonasa')"
                   class="w-20 px-1 py-1.5 text-right tabular-nums rounded-md outline-none focus:bg-white focus:ring-2 focus:ring-brand-200" /></td>
-                <td class="px-1 py-1"><input type="number" min="0" [value]="f.valorCobrado" (input)="setNum(i,'valorCobrado',$any($event.target).value)"
-                  [class.bg-green-100]="celdaModificada(i+'|valorCobrado')" [class.bg-transparent]="!celdaModificada(i+'|valorCobrado')"
+                <td class="px-1 py-1"><input type="number" min="0" [value]="f.valorCopago" (input)="setNum(i,'valorCopago',$any($event.target).value)"
+                  [class.bg-green-100]="celdaModificada(i+'|valorCopago')" [class.bg-transparent]="!celdaModificada(i+'|valorCopago')"
+                  class="w-20 px-1 py-1.5 text-right tabular-nums rounded-md outline-none focus:bg-white focus:ring-2 focus:ring-brand-200" /></td>
+                <td class="px-1 py-1"><input type="number" min="0" [value]="f.valorParticular" (input)="setNum(i,'valorParticular',$any($event.target).value)"
+                  [class.bg-green-100]="celdaModificada(i+'|valorParticular')" [class.bg-transparent]="!celdaModificada(i+'|valorParticular')"
                   class="w-20 px-1 py-1.5 text-right tabular-nums rounded-md outline-none focus:bg-white focus:ring-2 focus:ring-brand-200" /></td>
                 <td class="px-1 py-1 text-center"><input type="number" min="0" max="100" [value]="f.porcentaje" (input)="setPorc(i,$any($event.target).value)"
                   [class.bg-green-100]="celdaModificada(i+'|porc')" [class.bg-transparent]="!celdaModificada(i+'|porc')"
@@ -129,7 +134,7 @@ interface FilaA {
             }
             <tr class="bg-brand-100 font-bold text-[12px] text-brand-900">
               <td class="!border-brand-200 px-3 py-2.5 sticky left-0 bg-brand-100 z-10">TOTAL</td>
-              <td class="!border-brand-200"></td><td class="!border-brand-200"></td><td class="!border-brand-200"></td><td class="!border-brand-200"></td>
+              <td class="!border-brand-200"></td><td class="!border-brand-200"></td><td class="!border-brand-200"></td><td class="!border-brand-200"></td><td class="!border-brand-200"></td>
               @for (c of columnasSemana(); track $index) {
                 <td class="!border-brand-200 px-1 py-2.5 text-center tabular-nums">{{ calculo().totalColSemana[c] || '' }}</td>
               }
@@ -278,7 +283,8 @@ export class ApsoradPlanilla implements PuedeSalir {
           nombre: it.nombre,
           prevision: it.prevision,
           valorFonasa: it.valorFonasa,
-          valorCobrado: it.valorCobrado,
+          valorCopago: it.valorCopago ?? 0,
+          valorParticular: it.valorParticular ?? it.valorCobrado ?? 0,
           porcentaje: Math.round((it.porcentaje ?? l.porcentaje) * 100),
           celdas: it.celdas ? { ...it.celdas } : it.cantidad ? { [`${l.periodo}-01`]: it.cantidad } : {},
         })));
@@ -307,9 +313,10 @@ export class ApsoradPlanilla implements PuedeSalir {
     const cols = this.columnasSemana();
     const filas = this.filas().map((f) => {
       const cantidadMes = Object.values(f.celdas).reduce((s, n) => s + (n || 0), 0);
-      const total = cantidadMes * f.valorCobrado;
+      const cobrado = f.prevision === 'FONASA' ? f.valorFonasa : f.valorParticular;
+      const total = cantidadMes * cobrado;
       const apsorad = Math.round(cantidadMes * f.valorFonasa * (f.porcentaje / 100));
-      return { ...f, cantidadMes, total, apsorad, cesain: total - apsorad };
+      return { ...f, cantidadMes, cobrado, total, apsorad, cesain: total - apsorad };
     });
     const totalColSemana: Record<string, number> = {};
     for (const c of cols) totalColSemana[c] = this.filas().reduce((s, f) => s + (f.celdas[c] || 0), 0);
@@ -331,7 +338,7 @@ export class ApsoradPlanilla implements PuedeSalir {
     this.marcar('global');
   }
   setPorc(i: number, v: string) { this.filas()[i].porcentaje = Math.min(100, Math.max(0, +v || 0)); this.marcar(i + '|porc'); this.bump(); }
-  setNum(i: number, campo: 'valorFonasa' | 'valorCobrado', v: string) { this.filas()[i][campo] = Math.max(0, +v || 0); this.marcar(i + '|' + campo); this.bump(); }
+  setNum(i: number, campo: 'valorFonasa' | 'valorCopago' | 'valorParticular', v: string) { this.filas()[i][campo] = Math.max(0, +v || 0); this.marcar(i + '|' + campo); this.bump(); }
   setCelda(i: number, c: string, v: string) { this.filas()[i].celdas[c] = Math.max(0, Math.floor(+v || 0)); this.marcar(i + '|' + c); this.bump(); }
   setPrevision(i: number, v: PrevisionApsorad) { this.filas()[i].prevision = v; this.marcar(i + '|prev'); this.bump(); }
 
@@ -340,7 +347,7 @@ export class ApsoradPlanilla implements PuedeSalir {
     const prev = this.pickerPrevision();
     this.filas.update((fs) => [...fs, {
       id: `${p.id}_${fs.length}`, nombre: p.nombre, prevision: prev,
-      valorFonasa: p.valorFonasa, valorCobrado: prev === 'FONASA' ? p.valorFonasa : p.valorParticular,
+      valorFonasa: p.valorFonasa, valorCopago: p.valorCopago ?? 0, valorParticular: p.valorParticular,
       porcentaje: this.porcentaje(), celdas: {},
     }]);
     this.marcar('add');
@@ -359,7 +366,7 @@ export class ApsoradPlanilla implements PuedeSalir {
       for (const [fecha, c] of Object.entries(f.celdas)) if (c > 0) celdas[fecha] = c;
       return {
         id: f.id, nombre: f.nombre, prevision: f.prevision,
-        valorFonasa: f.valorFonasa, valorCobrado: f.valorCobrado,
+        valorFonasa: f.valorFonasa, valorCopago: f.valorCopago, valorParticular: f.valorParticular,
         porcentaje: f.porcentaje / 100, celdas,
       };
     });
