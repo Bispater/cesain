@@ -102,7 +102,7 @@ interface FilaA {
                     <option value="FONASA">FONASA</option><option value="PARTICULAR">PARTICULAR</option>
                   </select>
                 </td>
-                <td class="px-1 py-1" [class.ring-2]="f.prevision==='FONASA'" [class.ring-brand-300]="f.prevision==='FONASA'"><input type="number" min="0" [value]="f.valorFonasa" (input)="setNum(i,'valorFonasa',$any($event.target).value)"
+                <td class="px-1 py-1"><input type="number" min="0" [value]="f.valorFonasa" (input)="setNum(i,'valorFonasa',$any($event.target).value)"
                   [class.bg-green-100]="celdaModificada(i+'|valorFonasa')" [class.bg-transparent]="!celdaModificada(i+'|valorFonasa')"
                   class="w-20 px-1 py-1.5 text-right tabular-nums rounded-md outline-none focus:bg-white focus:ring-2 focus:ring-brand-200" /></td>
                 <td class="px-1 py-1"><input type="number" min="0" [value]="f.valorCopago" (input)="setNum(i,'valorCopago',$any($event.target).value)"
