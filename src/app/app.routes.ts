@@ -17,6 +17,13 @@ export const routes: Routes = [
       import('./features/comprobante/comprobante').then((m) => m.Comprobante),
   },
   {
+    // Comprobante APSORAD imprimible: también fuera del Shell.
+    path: 'apsorad/comprobante/:id',
+    canActivate: [apsoradGuard],
+    loadComponent: () =>
+      import('./features/apsorad/apsorad-comprobante').then((m) => m.ApsoradComprobante),
+  },
+  {
     path: '',
     component: Shell,
     canActivate: [authGuard],

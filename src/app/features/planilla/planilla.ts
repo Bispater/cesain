@@ -1,5 +1,6 @@
 import { Component, HostListener, computed, effect, inject, input, signal } from '@angular/core';
 import { SlicePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { PuedeSalir } from '../../core/guards/unsaved.guard';
 import { LiquidacionService, nuevoItemId } from '../../core/services/liquidacion.service';
@@ -8,6 +9,7 @@ import { ProfesionalService } from '../../core/services/profesional.service';
 import { ItemLiquidacion, Liquidacion, Prevision, nombrePeriodo } from '../../core/models/liquidacion.model';
 import { CATEGORIAS, Prestacion } from '../../core/models/prestacion.model';
 import { ClpPipe } from '../../shared/pipes/clp.pipe';
+import { MonedaInput } from '../../shared/directives/moneda-input';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { ToastService } from '../../shared/toast/toast.service';
 import { HistorialService } from '../../core/services/historial.service';
@@ -36,7 +38,7 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
 
 @Component({
   selector: 'app-planilla',
-  imports: [ClpPipe, RouterLink, SlicePipe, Icon],
+  imports: [ClpPipe, MonedaInput, FormsModule, RouterLink, SlicePipe, Icon],
   template: `
     @if (base(); as l) {
       <!-- Encabezado: título -->
@@ -186,8 +188,8 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
                   </select>
                 </td>
                 <td class="px-1.5 py-1">
-                  <input type="number" inputmode="numeric" min="0" [value]="f.valorUnitario || ''"
-                         (input)="setNumCampo(i, 'valorUnitario', $any($event.target).value)"
+                  <input appMoneda type="text" inputmode="numeric" [ngModel]="f.valorUnitario"
+                         (ngModelChange)="setNumCampo(i, 'valorUnitario', $event)"
                          [class.bg-green-100]="celdaModificada(i + '|valor')"
                          [class.bg-transparent]="!celdaModificada(i + '|valor')"
                          class="w-24 px-2 py-1.5 text-right tabular-nums rounded-md outline-none
@@ -377,13 +379,13 @@ const DOW = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
                   @for (c of categorias; track c) { <option [value]="c">{{ c }}</option> }
                 </select>
                 <label class="text-xs text-gray-500">Valor bono
-                  <input type="number" inputmode="numeric" min="0" [value]="nuevoValor() || ''"
-                         (input)="nuevoValor.set(noNeg($any($event.target).value))"
+                  <input appMoneda type="text" inputmode="numeric" [ngModel]="nuevoValor()"
+                         (ngModelChange)="nuevoValor.set(noNeg($event))"
                          class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-right outline-none focus:ring-2 focus:ring-brand-200" />
                 </label>
                 <label class="text-xs text-gray-500">Copago
-                  <input type="number" inputmode="numeric" min="0" [value]="nuevoCopago() || ''"
-                         (input)="nuevoCopago.set(noNeg($any($event.target).value))"
+                  <input appMoneda type="text" inputmode="numeric" [ngModel]="nuevoCopago()"
+                         (ngModelChange)="nuevoCopago.set(noNeg($event))"
                          class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-right outline-none focus:ring-2 focus:ring-brand-200" />
                 </label>
               </div>
@@ -583,7 +585,7 @@ export class Planilla implements PuedeSalir {
     return this.celdasModificadas().has(clave);
   }
   /** Convierte a número no negativo (para inputs). */
-  noNeg(v: string): number {
+  noNeg(v: string | number): number {
     return Math.max(0, +v || 0);
   }
 
@@ -592,7 +594,7 @@ export class Planilla implements PuedeSalir {
     this.marcarCelda(i + '|' + col);
     this.bump();
   }
-  setNumCampo(i: number, campo: 'valorUnitario', val: string) {
+  setNumCampo(i: number, campo: 'valorUnitario', val: string | number) {
     this.filas()[i][campo] = Math.max(0, +val || 0);
     this.marcarCelda(i + '|valor');
     this.bump();

@@ -1,5 +1,6 @@
 import { Component, HostListener, computed, effect, inject, input, signal } from '@angular/core';
 import { SlicePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApsoradService } from '../../core/services/apsorad.service';
 import { ItemApsorad, PrestacionApsorad, PrevisionApsorad, RegistroApsorad, ServicioApsorad } from '../../core/models/apsorad.model';
@@ -7,6 +8,7 @@ import { nombrePeriodo } from '../../core/models/liquidacion.model';
 import { Semana, diaSemana, enMes, semanasDeMes } from '../../core/util/semanas';
 import { PuedeSalir } from '../../core/guards/unsaved.guard';
 import { ClpPipe } from '../../shared/pipes/clp.pipe';
+import { MonedaInput } from '../../shared/directives/moneda-input';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { ToastService } from '../../shared/toast/toast.service';
 import { Icon } from '../../shared/icon/icon';
@@ -24,7 +26,7 @@ interface FilaA {
 
 @Component({
   selector: 'app-apsorad-planilla',
-  imports: [ClpPipe, RouterLink, SlicePipe, Icon],
+  imports: [ClpPipe, MonedaInput, FormsModule, RouterLink, SlicePipe, Icon],
   template: `
     @if (base(); as l) {
       <header class="mb-4">
@@ -46,6 +48,7 @@ interface FilaA {
                  class="w-16 rounded-lg border border-gray-200 px-2 py-1.5 text-sm text-right focus:ring-2 focus:ring-brand-200 outline-none" />
         </label>
         <div class="ml-auto flex items-center gap-2">
+          <a [routerLink]="['/apsorad/comprobante', l.id]" class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 text-gray-600 text-sm px-3 py-2 hover:bg-gray-50">⎙ Imprimir / PDF</a>
           <button (click)="abrirHistorial()" class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 text-gray-600 text-sm px-3 py-2 hover:bg-gray-50">🕘 Historial</button>
           <button (click)="abrirPicker()" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 text-white text-sm font-medium px-3 py-2 hover:bg-brand-700">+ Agregar prestación</button>
         </div>
@@ -102,13 +105,13 @@ interface FilaA {
                     <option value="FONASA">FONASA</option><option value="PARTICULAR">PARTICULAR</option>
                   </select>
                 </td>
-                <td class="px-1 py-1"><input type="number" min="0" [value]="f.valorFonasa" (input)="setNum(i,'valorFonasa',$any($event.target).value)"
+                <td class="px-1 py-1"><input appMoneda type="text" inputmode="numeric" [ngModel]="f.valorFonasa" (ngModelChange)="setNum(i,'valorFonasa',$event)"
                   [class.bg-green-100]="celdaModificada(i+'|valorFonasa')" [class.bg-transparent]="!celdaModificada(i+'|valorFonasa')"
                   class="w-20 px-1 py-1.5 text-right tabular-nums rounded-md outline-none focus:bg-white focus:ring-2 focus:ring-brand-200" /></td>
-                <td class="px-1 py-1"><input type="number" min="0" [value]="f.valorCopago" (input)="setNum(i,'valorCopago',$any($event.target).value)"
+                <td class="px-1 py-1"><input appMoneda type="text" inputmode="numeric" [ngModel]="f.valorCopago" (ngModelChange)="setNum(i,'valorCopago',$event)"
                   [class.bg-green-100]="celdaModificada(i+'|valorCopago')" [class.bg-transparent]="!celdaModificada(i+'|valorCopago')"
                   class="w-20 px-1 py-1.5 text-right tabular-nums rounded-md outline-none focus:bg-white focus:ring-2 focus:ring-brand-200" /></td>
-                <td class="px-1 py-1"><input type="number" min="0" [value]="f.valorParticular" (input)="setNum(i,'valorParticular',$any($event.target).value)"
+                <td class="px-1 py-1"><input appMoneda type="text" inputmode="numeric" [ngModel]="f.valorParticular" (ngModelChange)="setNum(i,'valorParticular',$event)"
                   [class.bg-green-100]="celdaModificada(i+'|valorParticular')" [class.bg-transparent]="!celdaModificada(i+'|valorParticular')"
                   class="w-20 px-1 py-1.5 text-right tabular-nums rounded-md outline-none focus:bg-white focus:ring-2 focus:ring-brand-200" /></td>
                 <td class="px-1 py-1 text-center"><input type="number" min="0" max="100" [value]="f.porcentaje" (input)="setPorc(i,$any($event.target).value)"
@@ -162,9 +165,9 @@ interface FilaA {
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5 max-w-3xl">
-        <div class="rounded-2xl bg-brand-600 p-5 text-white flex justify-between items-center"><span class="font-semibold">TOTAL COBRADO</span><span class="text-xl font-extrabold">{{ calculo().totalCobrado | clp }}</span></div>
-        <div class="rounded-2xl bg-white border border-gray-100 p-5 flex justify-between items-center"><span class="font-semibold text-brand-700">PAGO APSORAD</span><span class="text-xl font-extrabold text-brand-700">{{ calculo().totalApsorad | clp }}</span></div>
-        <div class="rounded-2xl bg-green-50 border border-green-100 p-5 flex justify-between items-center"><span class="font-semibold text-green-700">QUEDA CESAIN</span><span class="text-xl font-extrabold text-green-700">{{ calculo().totalCesain | clp }}</span></div>
+        <div class="rounded-2xl bg-brand-600 p-5 text-white flex justify-between items-center"><span class="font-semibold">TOTAL PERCIBIDO</span><span class="text-xl font-extrabold">{{ calculo().totalCobrado | clp }}</span></div>
+        <div class="rounded-2xl bg-white border border-gray-100 p-5 flex justify-between items-center"><span class="font-semibold text-brand-700">APSORAD</span><span class="text-xl font-extrabold text-brand-700">{{ calculo().totalApsorad | clp }}</span></div>
+        <div class="rounded-2xl bg-green-50 border border-green-100 p-5 flex justify-between items-center"><span class="font-semibold text-green-700">CESAIN</span><span class="text-xl font-extrabold text-green-700">{{ calculo().totalCesain | clp }}</span></div>
       </div>
 
       @if (mostrarHistorial()) {
@@ -184,7 +187,7 @@ interface FilaA {
                       <span class="text-xs px-2 py-0.5 rounded-full bg-brand-50 text-brand-700">{{ h.usuario }}</span>
                     </div>
                     <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-1">
-                      <span>Cobrado: <b class="text-gray-700">{{ h.totalCobrado | clp }}</b></span>
+                      <span>Percibido: <b class="text-gray-700">{{ h.totalCobrado | clp }}</b></span>
                       <span>APSORAD: <b class="text-brand-700">{{ h.totalApsorad | clp }}</b></span>
                       <span>CESAIN: <b class="text-green-700">{{ h.totalCesain | clp }}</b></span>
                     </div>
@@ -350,7 +353,7 @@ export class ApsoradPlanilla implements PuedeSalir {
     this.marcar('global');
   }
   setPorc(i: number, v: string) { this.filas()[i].porcentaje = Math.min(100, Math.max(0, +v || 0)); this.marcar(i + '|porc'); this.bump(); }
-  setNum(i: number, campo: 'valorFonasa' | 'valorCopago' | 'valorParticular', v: string) { this.filas()[i][campo] = Math.max(0, +v || 0); this.marcar(i + '|' + campo); this.bump(); }
+  setNum(i: number, campo: 'valorFonasa' | 'valorCopago' | 'valorParticular', v: string | number) { this.filas()[i][campo] = Math.max(0, +v || 0); this.marcar(i + '|' + campo); this.bump(); }
   setCelda(i: number, c: string, v: string) { this.filas()[i].celdas[c] = Math.max(0, Math.floor(+v || 0)); this.marcar(i + '|' + c); this.bump(); }
   setPrevision(i: number, v: PrevisionApsorad) { this.filas()[i].prevision = v; this.marcar(i + '|prev'); this.bump(); }
 

@@ -31,7 +31,7 @@ import { Spinner } from '../../shared/spinner/spinner';
             <th class="px-4 py-3 font-semibold">Servicio</th>
             <th class="px-4 py-3 font-semibold">Sede</th>
             <th class="px-4 py-3 font-semibold">Período</th>
-            <th class="px-4 py-3 font-semibold text-right">Cobrado</th>
+            <th class="px-4 py-3 font-semibold text-right">Percibido</th>
             <th class="px-4 py-3 font-semibold text-right">APSORAD</th>
             <th class="px-4 py-3 font-semibold text-right">CESAIN</th>
             <th class="px-4 py-3"></th>
@@ -48,6 +48,7 @@ import { Spinner } from '../../shared/spinner/spinner';
               <td class="px-4 py-3 text-right tabular-nums text-green-700 font-bold">{{ l.totalCesain | clp }}</td>
               <td class="px-4 py-3 text-right whitespace-nowrap">
                 <a [routerLink]="['/apsorad', l.id]" (click)="$event.stopPropagation()" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-3 py-1.5 mr-2">Abrir</a>
+                <a [routerLink]="['/apsorad/comprobante', l.id]" (click)="$event.stopPropagation()" class="text-xs text-brand-600 hover:underline mr-2">⎙ PDF</a>
                 <button (click)="eliminar(l); $event.stopPropagation()" class="text-xs text-red-500 hover:underline mr-2">Eliminar</button>
                 <span class="text-gray-400">{{ abierto() === l.id ? '▲' : '▼' }}</span>
               </td>
@@ -60,7 +61,7 @@ import { Spinner } from '../../shared/spinner/spinner';
                     <thead class="text-gray-500 text-left">
                       <tr>
                         <th class="py-1.5">Prestación</th><th class="py-1.5">Previsión</th>
-                        <th class="py-1.5 text-right">Cant.</th><th class="py-1.5 text-right">Cobrado</th>
+                        <th class="py-1.5 text-right">Cant.</th><th class="py-1.5 text-right">Percibido</th>
                         <th class="py-1.5 text-right">Total $</th><th class="py-1.5 text-right">APSORAD</th><th class="py-1.5 text-right">CESAIN</th>
                       </tr>
                     </thead>

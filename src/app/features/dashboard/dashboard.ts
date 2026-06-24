@@ -5,11 +5,15 @@ import { ApsoradService } from '../../core/services/apsorad.service';
 import { AuthService } from '../../core/services/auth.service';
 import { nombrePeriodo } from '../../core/models/liquidacion.model';
 import { ClpPipe } from '../../shared/pipes/clp.pipe';
+import { Donut, DonutSegmento } from '../../shared/charts/donut';
 import { Spinner } from '../../shared/spinner/spinner';
+
+/** Paleta para los segmentos de sede (se repite si hay muchas). */
+const PALETA_SEDE = ['#0ea5e9', '#673ab7', '#10b981', '#f59e0b', '#ec4899', '#14b8a6', '#f43f5e', '#6366f1'];
 
 @Component({
   selector: 'app-dashboard',
-  imports: [ClpPipe, RouterLink, Spinner],
+  imports: [ClpPipe, Donut, RouterLink, Spinner],
   template: `
     <!-- Encabezado + filtros -->
     <header class="flex flex-wrap items-end justify-between gap-4 mb-6">
@@ -94,26 +98,10 @@ import { Spinner } from '../../shared/spinner/spinner';
         <p class="text-xs text-gray-400 mt-2">{{ resumen().nLiquidaciones }} liquidaciones</p>
       </div>
 
-      <!-- Distribución por previsión -->
+      <!-- Distribución por previsión (gráfico circular) -->
       <div class="md:col-span-2 rounded-2xl bg-white p-5 shadow-sm border border-gray-100">
         <p class="text-sm font-semibold text-gray-700 mb-3">Ingresos por previsión</p>
-        <div class="space-y-2.5">
-          @for (p of ingresosPorPrevision(); track p.prevision) {
-            <div>
-              <div class="flex justify-between text-xs text-gray-500 mb-1">
-                <span class="font-medium text-gray-700">{{ p.prevision }}</span>
-                <span>{{ p.valor | clp }}</span>
-              </div>
-              <div class="h-2 rounded-full bg-gray-100 overflow-hidden">
-                <div class="h-full rounded-full"
-                     [class]="colorPrevision(p.prevision)"
-                     [style.width.%]="anchoPrevision(p.valor)"></div>
-              </div>
-            </div>
-          } @empty {
-            <p class="text-sm text-gray-400">Sin datos para el filtro actual.</p>
-          }
-        </div>
+        <app-donut [segmentos]="segmentosPrevision()" etiquetaCentro="Bruto" />
       </div>
     </section>
 
@@ -132,7 +120,7 @@ import { Spinner } from '../../shared/spinner/spinner';
 
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div class="rounded-xl bg-gray-50 p-4">
-          <p class="text-xs text-gray-500">Cobrado total</p>
+          <p class="text-xs text-gray-500">Percibido total</p>
           <p class="text-2xl font-extrabold text-gray-800 mt-1">{{ apsoradResumen().cobrado | clp }}</p>
         </div>
         <div class="rounded-xl bg-brand-50 p-4">
@@ -146,23 +134,29 @@ import { Spinner } from '../../shared/spinner/spinner';
       </div>
 
       @if (apsoradPorServicio().length) {
-        <div class="mt-5 space-y-3">
-          <div class="flex items-center gap-4 text-[11px] text-gray-400">
-            <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-brand-500"></span> APSORAD</span>
-            <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-green-500"></span> CESAIN</span>
-          </div>
-          @for (s of apsoradPorServicio(); track s.servicio) {
-            <div>
-              <div class="flex items-center justify-between text-xs mb-1">
-                <span class="font-medium text-gray-700">{{ s.label }} <span class="text-gray-400">· {{ s.cantidad }} exám.</span></span>
-                <span class="font-semibold text-gray-800 tabular-nums">{{ s.cobrado | clp }}</span>
-              </div>
-              <div class="h-2.5 rounded-full bg-gray-100 overflow-hidden flex" [style.width.%]="s.ancho">
-                <div class="h-full bg-brand-500" [style.width.%]="s.pctApsorad"></div>
-                <div class="h-full bg-green-500" [style.width.%]="100 - s.pctApsorad"></div>
-              </div>
+        <div class="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+          <!-- Gráfico circular: cómo se reparte lo percibido -->
+          <app-donut [segmentos]="segmentosApsorad()" etiquetaCentro="Percibido" />
+
+          <!-- Desglose por servicio (Ecografías / Rayos) -->
+          <div class="space-y-3">
+            <div class="flex items-center gap-4 text-[11px] text-gray-400">
+              <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-brand-500"></span> APSORAD</span>
+              <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-green-500"></span> CESAIN</span>
             </div>
-          }
+            @for (s of apsoradPorServicio(); track s.servicio) {
+              <div>
+                <div class="flex items-center justify-between text-xs mb-1">
+                  <span class="font-medium text-gray-700">{{ s.label }} <span class="text-gray-400">· {{ s.cantidad }} exám.</span></span>
+                  <span class="font-semibold text-gray-800 tabular-nums">{{ s.cobrado | clp }}</span>
+                </div>
+                <div class="h-2.5 rounded-full bg-gray-100 overflow-hidden flex" [style.width.%]="s.ancho">
+                  <div class="h-full bg-brand-500" [style.width.%]="s.pctApsorad"></div>
+                  <div class="h-full bg-green-500" [style.width.%]="100 - s.pctApsorad"></div>
+                </div>
+              </div>
+            }
+          </div>
         </div>
       } @else {
         <p class="text-sm text-gray-400 mt-4">
@@ -178,59 +172,40 @@ import { Spinner } from '../../shared/spinner/spinner';
 
     <!-- ===== GRÁFICOS ===== -->
     <section class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <!-- Ingresos por especialidad -->
+      <!-- Ingresos por especialidad (gráfico de columnas) -->
       <div class="rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
         <div class="flex items-center justify-between mb-4">
           <p class="text-sm font-semibold text-gray-700">Ingresos por especialidad</p>
           <span class="text-xs text-gray-400">monto bruto</span>
         </div>
-        <div class="space-y-3 max-h-80 overflow-y-auto pr-1">
-          @for (e of ingresosPorEspecialidad(); track e.especialidad) {
-            <div class="group">
-              <div class="flex items-center justify-between gap-3 text-xs mb-1">
-                <span class="text-gray-700 truncate">
-                  <span class="font-medium">{{ e.especialidad }}</span>
-                  <span class="text-gray-400">· {{ e.pacientes }} pac.</span>
-                </span>
-                <span class="font-semibold text-gray-800 tabular-nums shrink-0">{{ e.valor | clp }}</span>
+        @if (ingresosPorEspecialidad().length) {
+          <div class="flex items-stretch gap-2 h-64 overflow-x-auto pb-1">
+            @for (e of ingresosPorEspecialidad(); track e.especialidad) {
+              <div class="flex flex-col items-center gap-1 flex-1 min-w-[52px] h-full group">
+                <span class="text-[10px] font-bold text-gray-700 tabular-nums whitespace-nowrap">{{ montoCompacto(e.valor) }}</span>
+                <div class="flex-1 w-full flex items-end min-h-0">
+                  <div class="w-full rounded-t-lg bg-gradient-to-t from-brand-600 to-brand-400
+                              group-hover:from-brand-700 group-hover:to-brand-500 transition-all"
+                       [style.height.%]="e.porcentaje" [style.min-height.px]="6"
+                       [title]="e.especialidad + ': ' + (e.valor | clp)"></div>
+                </div>
+                <span class="text-[10px] text-gray-500 text-center leading-tight w-full line-clamp-2" [title]="e.especialidad">{{ e.especialidad }}</span>
+                <span class="text-[9px] text-gray-400">{{ e.pacientes }} pac.</span>
               </div>
-              <div class="h-2.5 rounded-full bg-gray-100 overflow-hidden">
-                <div class="h-full rounded-full bg-gradient-to-r from-brand-600 to-brand-400
-                            group-hover:from-brand-700 group-hover:to-brand-500 transition-all"
-                     [style.width.%]="e.porcentaje"></div>
-              </div>
-            </div>
-          } @empty {
-            <p class="text-sm text-gray-400 text-center py-6">Sin datos para el filtro actual.</p>
-          }
-        </div>
+            }
+          </div>
+        } @else {
+          <p class="text-sm text-gray-400 text-center py-6">Sin datos para el filtro actual.</p>
+        }
       </div>
 
-      <!-- Ingresos por sede -->
+      <!-- Ingresos por sede (gráfico circular) -->
       <div class="rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
         <div class="flex items-center justify-between mb-4">
           <p class="text-sm font-semibold text-gray-700">Ingresos por sede</p>
           <span class="text-xs text-gray-400">monto bruto</span>
         </div>
-        <div class="space-y-4">
-          @for (s of ingresosPorSede(); track s.sede) {
-            <div class="group">
-              <div class="flex items-center justify-between gap-3 text-xs mb-1">
-                <span class="text-gray-700 truncate">
-                  <span class="font-medium">{{ s.sede }}</span>
-                  <span class="text-gray-400">· {{ s.pacientes }} pac.</span>
-                </span>
-                <span class="font-semibold text-gray-800 tabular-nums shrink-0">{{ s.valor | clp }}</span>
-              </div>
-              <div class="h-3 rounded-full bg-gray-100 overflow-hidden">
-                <div class="h-full rounded-full bg-gradient-to-r from-sky-500 to-sky-400 transition-all"
-                     [style.width.%]="s.porcentaje"></div>
-              </div>
-            </div>
-          } @empty {
-            <p class="text-sm text-gray-400 text-center py-6">Sin datos para el filtro actual.</p>
-          }
-        </div>
+        <app-donut [segmentos]="segmentosSede()" etiquetaCentro="Bruto" />
       </div>
     </section>
 
@@ -298,7 +273,7 @@ import { Spinner } from '../../shared/spinner/spinner';
               <p class="text-xs text-gray-400">margen CESAIN</p>
               <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
                 <div class="rounded-lg bg-gray-50 px-2 py-1.5">
-                  <span class="text-gray-400">Cobrado</span>
+                  <span class="text-gray-400">Percibido</span>
                   <p class="font-semibold text-gray-700">{{ l.totalCobrado | clp }}</p>
                 </div>
                 <div class="rounded-lg bg-brand-50 px-2 py-1.5">
@@ -331,14 +306,14 @@ import { Spinner } from '../../shared/spinner/spinner';
               <p class="text-2xl font-extrabold text-gray-800 mt-3">{{ l.totalProfesional | clp }}</p>
               <p class="text-xs text-gray-400">recibe el profesional</p>
 
-              <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
-                <div class="rounded-lg bg-gray-50 px-2 py-1.5">
-                  <span class="text-gray-400">Bruto</span>
-                  <p class="font-semibold text-gray-700">{{ l.totalBruto | clp }}</p>
+              <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
+                <div class="rounded-lg bg-gray-50 px-3 py-2">
+                  <span class="text-gray-400">Total</span>
+                  <p class="text-base font-semibold text-gray-700">{{ l.totalBruto | clp }}</p>
                 </div>
-                <div class="rounded-lg bg-amber-50 px-2 py-1.5">
+                <div class="rounded-lg bg-amber-50 px-3 py-2">
                   <span class="text-amber-600">Clínica {{ (l.porcentajeClinica * 100) }}%</span>
-                  <p class="font-semibold text-amber-700">{{ l.totalClinica | clp }}</p>
+                  <p class="text-base font-semibold text-amber-700">{{ l.totalClinica | clp }}</p>
                 </div>
               </div>
 
@@ -447,6 +422,38 @@ export class Dashboard {
     () => this.resumen().totalClinica + this.apsoradResumen().cesain,
   );
 
+  // ───────── Segmentos para gráficos circulares (donut) ─────────
+  readonly segmentosPrevision = computed<DonutSegmento[]>(() =>
+    this.ingresosPorPrevision().map((p) => ({
+      label: p.prevision,
+      valor: p.valor,
+      color: p.prevision === 'FONASA' ? '#673ab7' : p.prevision === 'ISAPRE' ? '#0ea5e9' : '#f59e0b',
+    })),
+  );
+
+  readonly segmentosSede = computed<DonutSegmento[]>(() =>
+    this.ingresosPorSede().map((s, i) => ({
+      label: s.sede,
+      valor: s.valor,
+      color: PALETA_SEDE[i % PALETA_SEDE.length],
+    })),
+  );
+
+  readonly segmentosApsorad = computed<DonutSegmento[]>(() => {
+    const r = this.apsoradResumen();
+    return [
+      { label: 'Pago APSORAD', valor: r.apsorad, color: '#673ab7' },
+      { label: 'Margen CESAIN', valor: r.cesain, color: '#10b981' },
+    ];
+  });
+
+  /** Monto abreviado para las etiquetas de columnas: 25.626.350 -> "$25,6M". */
+  montoCompacto(n: number): string {
+    if (n >= 1_000_000) return '$' + (n / 1_000_000).toFixed(1).replace('.', ',') + 'M';
+    if (n >= 1_000) return '$' + Math.round(n / 1_000) + 'K';
+    return '$' + n;
+  }
+
   // ───────── Acceso rápido (filtros locales) ─────────
   readonly busqueda = signal('');
   readonly orden = signal<'monto' | 'nombre'>('monto');
@@ -488,19 +495,4 @@ export class Dashboard {
     return r.totalBruto > 0 ? Math.round((r.totalClinica / r.totalBruto) * 100) : 0;
   });
 
-  private readonly maxPrevision = computed(() =>
-    Math.max(1, ...this.ingresosPorPrevision().map((p) => p.valor)),
-  );
-
-  anchoPrevision(valor: number): number {
-    return Math.round((valor / this.maxPrevision()) * 100);
-  }
-
-  colorPrevision(prevision: string): string {
-    return prevision === 'FONASA'
-      ? 'bg-brand-500'
-      : prevision === 'ISAPRE'
-        ? 'bg-sky-500'
-        : 'bg-amber-400';
-  }
 }

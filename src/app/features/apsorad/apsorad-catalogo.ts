@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { ApsoradService } from '../../core/services/apsorad.service';
 import { PrestacionApsorad, ServicioApsorad, SERVICIOS_APSORAD } from '../../core/models/apsorad.model';
 import { ClpPipe } from '../../shared/pipes/clp.pipe';
+import { MonedaInput } from '../../shared/directives/moneda-input';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { ToastService } from '../../shared/toast/toast.service';
 import { Spinner } from '../../shared/spinner/spinner';
@@ -15,7 +16,7 @@ function vacio(): PrestacionApsorad {
 
 @Component({
   selector: 'app-apsorad-catalogo',
-  imports: [FormsModule, ClpPipe, RouterLink, Spinner, Icon],
+  imports: [FormsModule, ClpPipe, MonedaInput, RouterLink, Spinner, Icon],
   template: `
     <header class="flex flex-wrap items-center justify-between gap-3 mb-6">
       <div>
@@ -89,11 +90,11 @@ function vacio(): PrestacionApsorad {
                 @for (s of servicios; track s.valor) { <option [value]="s.valor">{{ s.label }}</option> }
               </select></label>
             <label class="text-sm"><span class="text-gray-600">Valor Fonasa</span>
-              <input type="number" min="0" [(ngModel)]="d.valorFonasa" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-right outline-none focus:ring-2 focus:ring-brand-200" /></label>
+              <input appMoneda type="text" inputmode="numeric" [(ngModel)]="d.valorFonasa" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-right outline-none focus:ring-2 focus:ring-brand-200" /></label>
             <label class="text-sm"><span class="text-gray-600">Copago</span>
-              <input type="number" min="0" [(ngModel)]="d.valorCopago" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-right outline-none focus:ring-2 focus:ring-brand-200" /></label>
+              <input appMoneda type="text" inputmode="numeric" [(ngModel)]="d.valorCopago" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-right outline-none focus:ring-2 focus:ring-brand-200" /></label>
             <label class="text-sm"><span class="text-gray-600">Valor Particular</span>
-              <input type="number" min="0" [(ngModel)]="d.valorParticular" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-right outline-none focus:ring-2 focus:ring-brand-200" /></label>
+              <input appMoneda type="text" inputmode="numeric" [(ngModel)]="d.valorParticular" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-right outline-none focus:ring-2 focus:ring-brand-200" /></label>
             <label class="text-sm"><span class="text-gray-600">Estado</span>
               <select [ngModel]="d.activo" (ngModelChange)="d.activo = $event === 'true' || $event === true"
                       class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:ring-2 focus:ring-brand-200">
