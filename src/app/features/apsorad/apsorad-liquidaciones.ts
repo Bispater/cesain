@@ -48,7 +48,8 @@ import { Spinner } from '../../shared/spinner/spinner';
               <td class="px-4 py-3 text-right tabular-nums text-green-700 font-bold">{{ l.totalCesain | clp }}</td>
               <td class="px-4 py-3 text-right whitespace-nowrap">
                 <a [routerLink]="['/apsorad', l.id]" (click)="$event.stopPropagation()" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-3 py-1.5 mr-2">Abrir</a>
-                <a [routerLink]="['/apsorad/comprobante', l.id]" (click)="$event.stopPropagation()" class="text-xs text-brand-600 hover:underline mr-2">⎙ PDF</a>
+                <a [routerLink]="['/apsorad/comprobante', l.id]" (click)="$event.stopPropagation()"
+                   class="rounded-lg border border-gray-200 text-gray-600 text-xs px-2.5 py-1.5 hover:bg-gray-50 mr-2">PDF</a>
                 <button (click)="eliminar(l); $event.stopPropagation()" class="text-xs text-red-500 hover:underline mr-2">Eliminar</button>
                 <span class="text-gray-400">{{ abierto() === l.id ? '▲' : '▼' }}</span>
               </td>

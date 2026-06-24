@@ -104,8 +104,9 @@ import { Spinner } from '../../shared/spinner/spinner';
       </section>
     </div>
 
-    <!-- Usuarios y roles (solo superadmin) -->
-    @if (auth.esSuperadmin()) {
+    <!-- Usuarios y roles (solo superadmin) — oculto temporalmente a pedido del usuario.
+         Para reactivar: poner mostrarUsuariosRoles = true. -->
+    @if (mostrarUsuariosRoles && auth.esSuperadmin()) {
     <section class="rounded-2xl bg-white shadow-sm border border-gray-100 p-5 mt-6 max-w-3xl">
       <h2 class="font-bold text-gray-800 mb-1">Usuarios y roles</h2>
       <p class="text-xs text-gray-400 mb-4">
@@ -153,6 +154,9 @@ export class Configuracion {
   readonly nuevaEspecialidad = signal('');
   readonly nuevoEmail = signal('');
   readonly nuevoRol = signal<Rol>('apsorad');
+
+  /** Oculta la sección "Usuarios y roles" temporalmente (no se usa por ahora). */
+  readonly mostrarUsuariosRoles: boolean = false;
 
   async asignarUsuario() {
     const e = this.nuevoEmail().trim();
