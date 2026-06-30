@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LiquidacionService } from '../../core/services/liquidacion.service';
 import { ApsoradService } from '../../core/services/apsorad.service';
+import { DentistaService } from '../../core/services/dentista.service';
 import { AuthService } from '../../core/services/auth.service';
 import { nombrePeriodo } from '../../core/models/liquidacion.model';
 import { ClpPipe } from '../../shared/pipes/clp.pipe';
@@ -170,6 +171,46 @@ const PALETA_SEDE = ['#0ea5e9', '#673ab7', '#10b981', '#f59e0b', '#ec4899', '#14
       </div>
     </section>
 
+    <!-- ===== DENTISTAS ===== -->
+    <section class="mt-4 rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div>
+          <p class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+            <span class="inline-block h-2 w-2 rounded-full bg-brand-500"></span>
+            DENTAL · Odontología
+          </p>
+          <p class="text-xs text-gray-400">Liquidaciones odontológicas (arancel · convenio · descuento)</p>
+        </div>
+        <a routerLink="/dentistas" class="text-xs text-brand-600 hover:underline">Ver módulo →</a>
+      </div>
+
+      <!-- Resumen del catálogo (siempre disponible) -->
+      <div class="flex flex-wrap gap-2 mb-4">
+        <span class="text-xs px-2.5 py-1 rounded-full bg-brand-50 text-brand-700 font-medium">{{ dentista.dentistasActivos().length }} dentistas</span>
+        <span class="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 font-medium">{{ dentista.prestaciones().length }} prestaciones</span>
+        <span class="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 font-medium">{{ dentista.conveniosActivos().length }} convenios</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="rounded-xl bg-gray-50 p-4">
+          <p class="text-xs text-gray-500">Bruto total</p>
+          <p class="text-2xl font-extrabold text-gray-800 mt-1">{{ dentistaResumen().bruto | clp }}</p>
+        </div>
+        <div class="rounded-xl bg-amber-50 p-4">
+          <p class="text-xs text-amber-600">Arriendo clínica</p>
+          <p class="text-2xl font-extrabold text-amber-700 mt-1">{{ dentistaResumen().clinica | clp }}</p>
+        </div>
+        <div class="rounded-xl bg-brand-50 p-4">
+          <p class="text-xs text-brand-600">Reciben dentistas</p>
+          <p class="text-2xl font-extrabold text-brand-700 mt-1">{{ dentistaResumen().dentista | clp }}</p>
+        </div>
+      </div>
+      <p class="text-xs text-gray-400 mt-3">
+        @if (dentista.cargando()) { <app-spinner label="Cargando…" /> }
+        @else { {{ dentistaResumen().n }} liquidaciones · {{ dentistaResumen().cantidad }} atenciones }
+      </p>
+    </section>
+
     <!-- ===== GRÁFICOS ===== -->
     <section class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
       <!-- Ingresos por especialidad (gráfico de columnas) -->
@@ -334,6 +375,7 @@ const PALETA_SEDE = ['#0ea5e9', '#673ab7', '#10b981', '#f59e0b', '#ec4899', '#14
 export class Dashboard {
   readonly svc = inject(LiquidacionService);
   readonly apsorad = inject(ApsoradService);
+  readonly dentista = inject(DentistaService);
   readonly auth = inject(AuthService);
   readonly nombrePeriodo = nombrePeriodo;
 
@@ -352,13 +394,31 @@ export class Dashboard {
     this.svc.ingresosPorPrevisionDe(this.filtradas()),
   );
 
-  /** Períodos disponibles en CESAIN o APSORAD (unión, descendente). */
+  /** Períodos disponibles en CESAIN, APSORAD o Dentistas (unión, descendente). */
   readonly periodosCombinados = computed(() => {
     const set = new Set<string>([
       ...this.svc.periodos(),
       ...this.apsorad.activas().map((l) => l.periodo),
+      ...this.dentista.activas().map((l) => l.periodo),
     ]);
     return [...set].sort().reverse();
+  });
+
+  // ───────── Dentistas ─────────
+  /** Liquidaciones dentista del período filtrado. */
+  readonly dentistaActivas = computed(() => {
+    const per = this.filtroPeriodo();
+    return this.dentista.activas().filter((l) => per === 'TODOS' || l.periodo === per);
+  });
+  readonly dentistaResumen = computed(() => {
+    const d = this.dentistaActivas();
+    return {
+      bruto: d.reduce((s, l) => s + l.totalBruto, 0),
+      clinica: d.reduce((s, l) => s + l.totalClinica, 0),
+      dentista: d.reduce((s, l) => s + l.totalDentista, 0),
+      cantidad: d.reduce((s, l) => s + l.totalCantidad, 0),
+      n: d.length,
+    };
   });
 
   /** Ingresos por sede (CESAIN). */

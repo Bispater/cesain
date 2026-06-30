@@ -139,6 +139,7 @@ export class Shell {
     { path: '/profesionales', label: 'Profesionales', icon: 'profesionales', soloAdmin: true },
     { path: '/prestaciones', label: 'Prestaciones', icon: 'prestaciones', soloAdmin: true },
     { path: '/apsorad', label: 'APSORAD', icon: 'apsorad', apsorad: true },
+    { path: '/dentistas', label: 'DENTAL', icon: 'dentista' },
     { path: '/configuracion', label: 'Configuración', icon: 'config', soloAdmin: true },
   ];
 

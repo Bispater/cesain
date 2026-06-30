@@ -24,6 +24,13 @@ export const routes: Routes = [
       import('./features/apsorad/apsorad-comprobante').then((m) => m.ApsoradComprobante),
   },
   {
+    // Comprobante dentista imprimible: también fuera del Shell.
+    path: 'dentistas/comprobante/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/dentistas/dentistas-comprobante').then((m) => m.DentistasComprobante),
+  },
+  {
     path: '',
     component: Shell,
     canActivate: [authGuard],
@@ -64,6 +71,33 @@ export const routes: Routes = [
         canActivate: [soloAdminGuard],
         loadComponent: () =>
           import('./features/configuracion/configuracion').then((m) => m.Configuracion),
+      },
+      // ── Dentistas (visible para todos los roles con sesión) ──
+      {
+        path: 'dentistas',
+        loadComponent: () =>
+          import('./features/dentistas/dentistas-liquidaciones').then((m) => m.DentistasLiquidaciones),
+      },
+      {
+        path: 'dentistas/prestaciones',
+        loadComponent: () =>
+          import('./features/dentistas/dentistas-prestaciones').then((m) => m.DentistasPrestaciones),
+      },
+      {
+        path: 'dentistas/convenios',
+        loadComponent: () =>
+          import('./features/dentistas/dentistas-convenios').then((m) => m.DentistasConvenios),
+      },
+      {
+        path: 'dentistas/profesionales',
+        loadComponent: () =>
+          import('./features/dentistas/dentistas-profesionales').then((m) => m.DentistasProfesionales),
+      },
+      {
+        path: 'dentistas/planilla/:id',
+        canDeactivate: [unsavedGuard],
+        loadComponent: () =>
+          import('./features/dentistas/dentistas-planilla').then((m) => m.DentistasPlanilla),
       },
       // ── APSORAD (superadmin + rol apsorad) ──
       {

@@ -13,6 +13,7 @@ export type IconName =
   | 'config'
   | 'trash'
   | 'apsorad'
+  | 'dentista'
   | 'colapsar';
 
 /** Íconos SVG (estilo Lucide, stroke). Uso: <app-icon name="dashboard" /> */
@@ -67,6 +68,9 @@ export type IconName =
         }
         @case ('apsorad') {
           <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+        }
+        @case ('dentista') {
+          <path d="M12 5.5C10.5 4 8.5 3.5 7 4.2 5.2 5 4.5 7 5 9.5c.3 1.5.4 2.2.6 3.6.3 2 .5 3.4 1 5.4.3 1.2.6 2 1.2 2 .7 0 .9-1 1.2-2.5.3-1.4.5-2.4 1-2.4s.7 1 1 2.4c.3 1.5.5 2.5 1.2 2.5.6 0 .9-.8 1.2-2 .5-2 .7-3.4 1-5.4.2-1.4.3-2.1.6-3.6.5-2.5-.2-4.5-2-5.3-1.5-.7-3.5-.2-5 1.3z" />
         }
         @case ('colapsar') {
           <path d="M11 17l-5-5 5-5" /><path d="M18 17l-5-5 5-5" />

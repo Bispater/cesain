@@ -36,5 +36,20 @@ service cloud.firestore {
     match /apsorad_historial/{id} {
       allow read, write: if true;
     }
+    match /dentista_dentistas/{id} {
+      allow read, write: if true;
+    }
+    match /dentista_prestaciones/{id} {
+      allow read, write: if true;
+    }
+    match /dentista_convenios/{id} {
+      allow read, write: if true;
+    }
+    match /dentista_liquidaciones/{id} {
+      allow read, write: if true;
+    }
+    match /dentista_historial/{id} {
+      allow read, write: if true;
+    }
   }
 }
