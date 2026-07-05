@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="es-CL">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CESAIN · Propuesta digital</title>
+<!--
+  ┌──────────────────────────────────────────────────────────────┐
+  │  PRECIOS EDITABLES (referenciales, ajústalos a gusto):        │
+  │   Esencial ......... $700.000   · mant. $39.000/mes           │
+  │   Profesional ...... $1.100.000 · mant. $55.000/mes           │
+  │   Completo ......... $1.250.000 · mant. $69.000/mes           │
+  │   Add-ons: Agenda $250.000 · Webpay $180.000 · Zoom $150.000  │
+  │   Contacto: al final del archivo.                             │
+  └──────────────────────────────────────────────────────────────┘
+-->
+<style>
+  :root{
+    --brand:#673ab7;--brand-dark:#3f1f8a;--brand-700:#5a2ea6;
+    --accent:#ffca28;--ink:#1f2430;--muted:#6b7280;--line:#e9e6f0;
+    --bg:#f4f1f8;--card:#fff;--ok:#16a34a;
+    --shadow:0 18px 50px -20px rgba(63,31,138,.45);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;overflow:hidden;
+  }
+  h1,h2,h3,h4{margin:0;line-height:1.12;letter-spacing:-.02em}
+  p{margin:0}
+
+  /* Deck / slides */
+  .deck{height:100vh;overflow-y:scroll;scroll-snap-type:y mandatory;scroll-behavior:smooth;
+        scrollbar-width:none}
+  .deck::-webkit-scrollbar{display:none}
+  .slide{min-height:100vh;scroll-snap-align:start;display:grid;place-items:center;
+         padding:64px 26px;position:relative}
+  .inner{width:100%;max-width:1000px;margin:0 auto}
+  .center{text-align:center}
+
+  .eyebrow{font-size:12.5px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--brand)}
+  .pill{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:800;
+        padding:6px 14px;border-radius:999px;background:#efeafc;color:var(--brand-dark)}
+  .pill.green{background:#e7f6ec;color:#15803d}
+  .pill.amber{background:#fff4d6;color:#8a5a00}
+  .muted{color:var(--muted)}
+  .lead{font-size:clamp(16px,2.2vw,20px);color:var(--muted);max-width:680px}
+  .center .lead{margin-inline:auto}
+
+  h2.title{font-size:clamp(26px,4.2vw,42px);font-weight:900;margin:16px 0 12px}
+  .kicker{display:block;font-size:clamp(15px,2vw,18px);font-weight:700;color:var(--brand);margin-bottom:6px}
+
+  .grid{display:grid;gap:15px}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;text-align:left;
+        box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  .card .ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:21px;
+        background:#efeafc;margin-bottom:11px}
+  .card h3{font-size:17px;font-weight:800;margin-bottom:5px}
+  .card p{color:var(--muted);font-size:14px}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:30px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}
+  .kpi b{display:block;font-size:30px;font-weight:900;color:var(--brand-dark)}
+  .kpi span{font-size:13px;color:var(--muted)}
+
+  .checks{list-style:none;padding:0;margin:0;display:grid;gap:11px}
+  .checks li{display:flex;gap:11px;align-items:flex-start;font-size:15px}
+  .checks .ck{flex:none;width:22px;height:22px;border-radius:7px;background:#e7f6ec;color:var(--ok);
+       display:grid;place-items:center;font-size:13px;font-weight:900;margin-top:1px}
+  .checks small{color:var(--muted);font-weight:400}
+
+  /* Pricing */
+  .prices{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;align-items:stretch}
+  .price{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;position:relative;text-align:left}
+  .price.hi{border:2px solid var(--brand);box-shadow:var(--shadow);transform:translateY(-6px)}
+  .price .tag{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--brand);color:#fff;
+       font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:5px 12px;border-radius:999px}
+  .price h3{font-size:14px;font-weight:800;color:var(--brand);text-transform:uppercase;letter-spacing:.05em}
+  .price .amt{font-size:32px;font-weight:900;margin:6px 0 0}
+  .price .amt small{font-size:14px;font-weight:700;color:var(--muted)}
+  .price .mo{font-size:13px;color:var(--muted);margin:2px 0 14px}
+  .price .desc{font-size:13.5px;color:var(--muted);margin-bottom:12px}
+
+  table.addons{width:100%;border-collapse:collapse;background:var(--card);border-radius:16px;overflow:hidden;
+        border:1px solid var(--line);font-size:15px}
+  table.addons th,table.addons td{padding:13px 16px;text-align:left;border-bottom:1px solid var(--line)}
+  table.addons th{background:#faf8fe;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  table.addons td:last-child,table.addons th:last-child{text-align:right;font-weight:800;white-space:nowrap}
+  table.addons tr:last-child td{border-bottom:0}
+  table.addons tr.base td{background:#faf8fe;font-weight:700}
+
+  /* Timeline */
+  .timeline{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;text-align:left}
+  .step .n{width:30px;height:30px;border-radius:9px;background:var(--brand);color:#fff;font-weight:900;
+       display:grid;place-items:center;margin-bottom:9px}
+  .step .wk{font-size:12px;font-weight:800;color:var(--brand)}
+  .step h4{font-size:15px;margin:2px 0 4px}
+  .step p{font-size:13px;color:var(--muted)}
+
+  /* Cover + closing */
+  .cover{background:linear-gradient(135deg,var(--brand),var(--brand-dark));color:#fff}
+  .cover::after{content:"";position:absolute;inset:0;
+        background:radial-gradient(700px 340px at 82% -8%,rgba(255,202,40,.4),transparent 60%)}
+  .cover .inner{position:relative;z-index:1}
+  .cover .pill{background:rgba(255,255,255,.16);color:#fff}
+  .cover h1{font-size:clamp(34px,6.2vw,64px);font-weight:900;margin:20px 0 14px}
+  .cover .lead{color:#e9e2fb}
+  .mark{width:56px;height:56px;border-radius:15px;display:inline-grid;place-items:center;
+        background:var(--accent);color:var(--brand-dark);font-weight:900;font-size:30px;margin-bottom:6px}
+  .hint{margin-top:34px;font-size:13px;color:#d8ccf5;opacity:.9}
+
+  .cta .inner{background:linear-gradient(135deg,var(--brand),var(--brand-dark));color:#fff;border-radius:24px;padding:46px;box-shadow:var(--shadow)}
+  .cta h2{font-size:clamp(26px,4vw,40px);font-weight:900;margin-bottom:10px}
+  .cta p{color:#e9e2fb;max-width:560px;margin:0 auto 22px}
+  .contact{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+  .contact a{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.24);color:#fff;
+       padding:11px 18px;border-radius:12px;text-decoration:none;font-weight:700;font-size:14px}
+
+  /* Controls */
+  #bar{position:fixed;top:0;left:0;height:4px;background:linear-gradient(90deg,var(--accent),var(--brand));
+       width:0;transition:width .3s ease;z-index:50}
+  #dots{position:fixed;right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;z-index:50}
+  .dot{width:10px;height:10px;border-radius:999px;border:0;padding:0;cursor:pointer;background:#cbb9e8;transition:.2s}
+  .dot.on{background:var(--brand);transform:scale(1.35)}
+  #ctrl{position:fixed;right:18px;bottom:18px;display:flex;align-items:center;gap:8px;z-index:50}
+  #ctrl button{width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:#fff;
+       cursor:pointer;font-size:18px;color:var(--ink);box-shadow:0 4px 14px -6px rgba(0,0,0,.25);transition:.15s}
+  #ctrl button:hover{border-color:var(--brand);color:var(--brand)}
+  #counter{position:fixed;left:18px;bottom:22px;font-size:13px;font-weight:700;color:var(--muted);z-index:50;
+       background:rgba(255,255,255,.7);padding:4px 10px;border-radius:999px;backdrop-filter:blur(6px)}
+  .logo-mini{position:fixed;left:18px;top:16px;display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px;z-index:50;color:var(--brand-dark)}
+  .logo-mini .m{width:26px;height:26px;border-radius:7px;background:var(--accent);color:var(--brand-dark);display:grid;place-items:center;font-weight:900;font-size:14px}
+  .cover ~ #counter,.cover ~ .logo-mini{}
+
+  @media (max-width:820px){
+    .g3,.prices,.timeline,.kpis{grid-template-columns:repeat(2,1fr)}
+    .price.hi{transform:none}
+    #dots{display:none}
+    .slide{padding:56px 18px}
+  }
+  @media (max-width:520px){
+    .g2,.prices,.timeline,.kpis,.g3{grid-template-columns:1fr}
+  }
+  @media print{
+    body{overflow:visible}
+    .deck{height:auto;overflow:visible}
+    .slide{min-height:auto;page-break-after:always;padding:24px}
+    #bar,#dots,#ctrl,#counter,.logo-mini,.hint{display:none!important}
+    .cover,.cta .inner,.price.hi{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+</style>
+</head>
+<body>
+
+<div id="bar"></div>
+<div class="logo-mini"><span class="m">C</span> CESAIN</div>
+<div id="dots"></div>
+<div id="counter">1 / 9</div>
+<div id="ctrl">
+  <button id="fs" title="Pantalla completa">⛶</button>
+  <button id="prev" title="Anterior">↑</button>
+  <button id="next" title="Siguiente">↓</button>
+</div>
+
+<main class="deck" id="deck">
+
+  <!-- 1 · Portada -->
+  <section class="slide cover center">
+    <div class="inner">
+      <div class="mark">C</div>
+      <div class="pill">Centro de Salud Integral</div>
+      <h1>Propuesta digital</h1>
+      <p class="lead">Un sistema de gestión que <b>ya está funcionando</b> — y un sitio web
+        para los pacientes en <b>cesain.cl</b>.</p>
+      <p class="hint">Usa ↓ / → o la barra espaciadora para avanzar</p>
+    </div>
+  </section>
+
+  <!-- 2 · Ya funciona -->
+  <section class="slide">
+    <div class="inner">
+      <span class="pill green">● Ya en funcionamiento</span>
+      <h2 class="title">El sistema de gestión ya está operando</h2>
+      <p class="lead">Lo que antes vivía en planillas de Excel dispersas, hoy está en un solo lugar:
+        ordenado, en la nube y con respaldo automático.</p>
+      <div class="kpis">
+        <div class="kpi"><b>3</b><span>módulos operativos</span></div>
+        <div class="kpi"><b>24/7</b><span>en la nube</span></div>
+        <div class="kpi"><b>Auto</b><span>respaldos diarios</span></div>
+        <div class="kpi"><b>0</b><span>Excel manuales</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · Módulos -->
+  <section class="slide">
+    <div class="inner">
+      <span class="kicker">Lo entregado</span>
+      <h2 class="title">Módulos ya construidos</h2>
+      <div class="grid g3" style="margin-top:18px">
+        <div class="card"><div class="ico">📊</div><h3>Dashboard consolidado</h3><p>Ingresos, arriendo y márgenes de un vistazo, con gráficos por sede, especialidad y previsión.</p></div>
+        <div class="card"><div class="ico">🧾</div><h3>Liquidaciones médicas</h3><p>Planilla editable por semana, totales automáticos, comprobante PDF, papelera e historial con auditoría.</p></div>
+        <div class="card"><div class="ico">🦷</div><h3>Módulo DENTAL</h3><p>Liquidaciones odontológicas: arancel, convenio y descuento por prestación, catálogo por profesional.</p></div>
+        <div class="card"><div class="ico">🩻</div><h3>Módulo APSORAD</h3><p>Ecografías y rayos, con el cálculo del pago al prestador externo y el margen para CESAIN.</p></div>
+        <div class="card"><div class="ico">📍</div><h3>Multi-sede</h3><p>Un profesional puede trabajar en varias sedes con liquidaciones separadas que no se pisan.</p></div>
+        <div class="card"><div class="ico">🔐</div><h3>Seguridad y respaldos</h3><p>Roles por perfil, respaldos automáticos y recuperación a un punto en el tiempo.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · En números -->
+  <section class="slide center">
+    <div class="inner">
+      <span class="kicker">En números</span>
+      <h2 class="title">Sólido y en producción</h2>
+      <div class="kpis" style="margin-top:26px">
+        <div class="kpi"><b>3</b><span>módulos: Médico · DENTAL · APSORAD</span></div>
+        <div class="kpi"><b>3</b><span>sedes gestionadas</span></div>
+        <div class="kpi"><b>344</b><span>prestaciones dentales cargadas</span></div>
+        <div class="kpi"><b>PDF</b><span>comprobantes imprimibles</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · Propuesta web -->
+  <section class="slide">
+    <div class="inner">
+      <span class="pill amber">Propuesta</span>
+      <h2 class="title">Sitio web público · cesain.cl</h2>
+      <p class="lead" style="margin-bottom:20px">La cara pública de CESAIN: que los pacientes reserven, paguen y se contacten en línea,
+        y que el equipo administre el contenido sin depender de nadie.</p>
+      <div class="grid g2">
+        <div class="card">
+          <h3 style="margin-bottom:12px">Qué incluye</h3>
+          <ul class="checks">
+            <li><span class="ck">✓</span><span><b>Sitio web + administrador de contenido</b> <small>· noticias, banners, imágenes, secciones y horarios.</small></span></li>
+            <li><span class="ck">✓</span><span><b>Reserva de horas</b> <small>· integración con Agenda Pro.</small></span></li>
+            <li><span class="ck">✓</span><span><b>Pago online</b> <small>· Webpay.</small></span></li>
+            <li><span class="ck">✓</span><span><b>Reuniones online</b> <small>· Zoom / telemedicina programada.</small></span></li>
+            <li><span class="ck">✓</span><span><b>Contacto y correos</b> <small>· formulario que llega al equipo.</small></span></li>
+            <li><span class="ck">✓</span><span><b>Hosting, dominio y SSL.</b></span></li>
+          </ul>
+        </div>
+        <div class="card" style="background:var(--bg)">
+          <h3 style="margin-bottom:12px">Por qué conviene</h3>
+          <ul class="checks">
+            <li><span class="ck">✓</span><span>Menos llamadas: el paciente reserva y paga solo.</span></li>
+            <li><span class="ck">✓</span><span>Presencia profesional que capta pacientes nuevos.</span></li>
+            <li><span class="ck">✓</span><span>El equipo actualiza el contenido sin intermediarios.</span></li>
+            <li><span class="ck">✓</span><span>Se conecta con lo que ya usan (Agenda Pro, Webpay, Zoom).</span></li>
+            <li><span class="ck">✓</span><span>Base lista para crecer: campañas, blog, más sedes.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 · Planes -->
+  <section class="slide">
+    <div class="inner center">
+      <span class="kicker">Inversión</span>
+      <h2 class="title">Planes</h2>
+      <p class="lead" style="margin-bottom:26px">Elige según lo que CESAIN necesite hoy. Todo en CLP, pago único.</p>
+      <div class="prices">
+        <div class="price">
+          <h3>Esencial</h3>
+          <div class="amt">$700.000</div>
+          <div class="mo">+ $39.000 / mes mantención</div>
+          <p class="desc">Sitio + administrador de contenido.</p>
+          <ul class="checks">
+            <li><span class="ck">✓</span><span>Contenido (noticias, banners, horarios)</span></li>
+            <li><span class="ck">✓</span><span>Contacto + correos</span></li>
+            <li><span class="ck">✓</span><span>Hosting, dominio y SSL</span></li>
+          </ul>
+        </div>
+        <div class="price hi">
+          <span class="tag">Recomendado</span>
+          <h3>Profesional</h3>
+          <div class="amt">$1.100.000</div>
+          <div class="mo">+ $55.000 / mes mantención</div>
+          <p class="desc">Esencial + reservas + pago online.</p>
+          <ul class="checks">
+            <li><span class="ck">✓</span><span>Todo lo de Esencial</span></li>
+            <li><span class="ck">✓</span><span>Agendamiento (Agenda Pro)</span></li>
+            <li><span class="ck">✓</span><span>Pago online (Webpay)</span></li>
+          </ul>
+        </div>
+        <div class="price">
+          <h3>Completo</h3>
+          <div class="amt">$1.250.000</div>
+          <div class="mo">+ $69.000 / mes mantención</div>
+          <p class="desc">Todo, con telemedicina.</p>
+          <ul class="checks">
+            <li><span class="ck">✓</span><span>Todo lo de Profesional</span></li>
+            <li><span class="ck">✓</span><span>Reuniones online (Zoom)</span></li>
+            <li><span class="ck">✓</span><span>Listo para telemedicina</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 · Add-ons -->
+  <section class="slide">
+    <div class="inner">
+      <span class="kicker">A medida</span>
+      <h2 class="title">Ármalo por partes</h2>
+      <p class="lead" style="margin-bottom:20px">Se parte de la base y se suma solo lo que haga falta. Total transparencia.</p>
+      <table class="addons">
+        <thead><tr><th>Módulo</th><th>Qué aporta</th><th>Precio</th></tr></thead>
+        <tbody>
+          <tr class="base"><td>Base — Sitio + Contenido</td><td>Web + panel de noticias, banners, imágenes, horarios · contacto · hosting/SSL</td><td>$700.000</td></tr>
+          <tr><td>+ Agendamiento</td><td>Reserva de horas (Agenda Pro)</td><td>+$250.000</td></tr>
+          <tr><td>+ Pago online</td><td>Cobro con Webpay</td><td>+$180.000</td></tr>
+          <tr><td>+ Reuniones online</td><td>Zoom / telemedicina programada</td><td>+$150.000</td></tr>
+          <tr><td>Mantención mensual</td><td>Hosting, respaldos, SSL, actualizaciones y soporte</td><td>desde $39.000/mes</td></tr>
+        </tbody>
+      </table>
+      <p class="muted" style="font-size:12.5px;margin-top:12px">Costos de terceros (licencia Agenda Pro, comisiones Webpay, plan Zoom) los cubre CESAIN según cada proveedor.</p>
+    </div>
+  </section>
+
+  <!-- 8 · Tiempos -->
+  <section class="slide">
+    <div class="inner">
+      <span class="kicker">Plazos</span>
+      <h2 class="title">Tiempos de entrega</h2>
+      <p class="lead" style="margin-bottom:20px">Estimado <b>4 a 6 semanas</b> desde la aprobación y la entrega de accesos y contenido.</p>
+      <div class="timeline">
+        <div class="step"><div class="n">1</div><span class="wk">Semana 1</span><h4>Infraestructura</h4><p>VPS/hosting, dominio cesain.cl y SSL.</p></div>
+        <div class="step"><div class="n">2</div><span class="wk">Semanas 2–3</span><h4>Diseño y contenido</h4><p>Sitio y panel administrador de contenido.</p></div>
+        <div class="step"><div class="n">3</div><span class="wk">Semana 4</span><h4>Integraciones</h4><p>Agenda Pro, Webpay, Zoom y correos.</p></div>
+        <div class="step"><div class="n">4</div><span class="wk">Semanas 5–6</span><h4>Pruebas y salida</h4><p>Revisión, ajustes y publicación en vivo.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 · Cierre -->
+  <section class="slide cta center">
+    <div class="inner">
+      <h2>¿Avanzamos?</h2>
+      <p>Podemos partir por donde le haga más sentido a CESAIN: afinar el sistema que ya opera,
+         o poner en marcha el sitio web público.</p>
+      <div class="contact">
+        <a href="mailto:TU-CORREO@ejemplo.cl">✉ TU-CORREO@ejemplo.cl</a>
+        <a href="tel:+56900000000">📞 +56 9 0000 0000</a>
+        <a href="#">🌐 tu-sitio.cl</a>
+      </div>
+      <p class="muted" style="color:#d8ccf5;font-size:12px;margin-top:22px">
+        Valores en CLP, referenciales y ajustables · oferta válida por 30 días · servicios de terceros según sus propios planes.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  const deck = document.getElementById('deck');
+  const slides = Array.prototype.slice.call(deck.querySelectorAll('.slide'));
+  const dotsWrap = document.getElementById('dots');
+  const bar = document.getElementById('bar');
+  const counter = document.getElementById('counter');
+  let cur = 0;
+
+  slides.forEach(function(s, i){
+    const d = document.createElement('button');
+    d.className = 'dot'; d.setAttribute('aria-label', 'Ir a la sección ' + (i+1));
+    d.addEventListener('click', function(){ go(i); });
+    dotsWrap.appendChild(d);
+  });
+  const dots = Array.prototype.slice.call(dotsWrap.children);
+
+  function setCur(i){
+    cur = i;
+    dots.forEach(function(d, j){ d.classList.toggle('on', j === i); });
+    bar.style.width = ((i + 1) / slides.length * 100) + '%';
+    counter.textContent = (i + 1) + ' / ' + slides.length;
+  }
+  function go(i){
+    i = Math.max(0, Math.min(slides.length - 1, i));
+    slides[i].scrollIntoView({ behavior: 'smooth' });
+  }
+
+  const io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (e.isIntersecting) setCur(slides.indexOf(e.target));
+    });
+  }, { root: deck, threshold: 0.55 });
+  slides.forEach(function(s){ io.observe(s); });
+
+  document.addEventListener('keydown', function(e){
+    if (['ArrowDown','ArrowRight',' ','PageDown'].indexOf(e.key) > -1){ e.preventDefault(); go(cur + 1); }
+    else if (['ArrowUp','ArrowLeft','PageUp'].indexOf(e.key) > -1){ e.preventDefault(); go(cur - 1); }
+    else if (e.key === 'Home'){ e.preventDefault(); go(0); }
+    else if (e.key === 'End'){ e.preventDefault(); go(slides.length - 1); }
+  });
+  document.getElementById('next').addEventListener('click', function(){ go(cur + 1); });
+  document.getElementById('prev').addEventListener('click', function(){ go(cur - 1); });
+  document.getElementById('fs').addEventListener('click', function(){
+    if (!document.fullscreenElement){ (document.documentElement.requestFullscreen || function(){})(); }
+    else { (document.exitFullscreen || function(){})(); }
+  });
+  setCur(0);
+</script>
+</body>
+</html>
