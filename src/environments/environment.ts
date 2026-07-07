@@ -9,6 +9,12 @@
 export const environment = {
   production: false,
   /**
+   * BLOQUEO GLOBAL. true = la app queda deshabilitada: cualquier ruta muestra
+   * el aviso "contacta al administrador" y cierra la sesión en caché.
+   * Para reactivar el sistema, pon esto en false, recompila y despliega.
+   */
+  appBloqueada: true,
+  /**
    * true  = usa Cloud Firestore (proyecto cesain-web).
    * false = usa localStorage (sin backend).
    */

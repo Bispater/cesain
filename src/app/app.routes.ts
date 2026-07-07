@@ -3,8 +3,18 @@ import { authGuard } from './core/guards/auth.guard';
 import { unsavedGuard } from './core/guards/unsaved.guard';
 import { apsoradGuard, soloAdminGuard } from './core/guards/rol.guard';
 import { Shell } from './layout/shell';
+import { environment } from '../environments/environment';
 
-export const routes: Routes = [
+export const routes: Routes = environment.appBloqueada
+  ? [
+      {
+        // Sistema deshabilitado: cualquier ruta muestra el aviso de bloqueo.
+        path: '**',
+        loadComponent: () =>
+          import('./features/bloqueado/bloqueado').then((m) => m.Bloqueado),
+      },
+    ]
+  : [
   {
     path: 'login',
     loadComponent: () => import('./features/auth/login').then((m) => m.Login),
